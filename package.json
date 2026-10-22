@@ -8,12 +8,12 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/wogud32215/SchoolUtil.git"
+    "url": "https://github.com/wogud32215-dev/SchoolUtil.git"
   },
   "bugs": {
-    "url": "https://github.com/wogud32215/SchoolUtil/issues"
+    "url": "https://github.com/wogud32215-dev/SchoolUtil/issues"
   },
-  "homepage": "https://github.com/wogud32215/SchoolUtil#readme",
+  "homepage": "https://github.com/wogud32215-dev/SchoolUtil#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -83,7 +83,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "wogud32215",
+      "owner": "wogud32215-dev",
       "repo": "SchoolUtil",
       "releaseType": "release"
     }

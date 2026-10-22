@@ -4,12 +4,12 @@ Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버
 
 ## Git
 
-원격 저장소: [github.com/wogud32215/SchoolUtil](https://github.com/wogud32215/SchoolUtil)
+원격 저장소: [github.com/wogud32215-dev/SchoolUtil](https://github.com/wogud32215-dev/SchoolUtil)
 
 소스만 Git으로 관리합니다. `dist`, `dist-electron`, `release`, `node_modules`는 커밋하지 않습니다.
 
 ```bash
-git remote add origin https://github.com/wogud32215/SchoolUtil.git
+git remote add origin https://github.com/wogud32215-dev/SchoolUtil.git
 # 최초 푸시 (브랜치 이름이 main이면 main으로 바꿉니다)
 git push -u origin master
 ```
@@ -71,7 +71,7 @@ npm run dist
 
 ### 첫 배포 준비
 
-1. `package.json`의 `repository`·`build.publish`는 **wogud32215/SchoolUtil** 로 맞춰 두었습니다.
+1. `package.json`의 `repository`·`build.publish`는 **wogud32215-dev/SchoolUtil** 로 맞춰 두었습니다.
 2. `git remote`가 위 저장소를 가리키는지 확인한 뒤 `main` 또는 `master`에 푸시하면 `.github/workflows/ci.yml`이 타입 검사·빌드를 실행합니다.
 
 ### 릴리스 올리기 (권장: 태그 + Actions)
