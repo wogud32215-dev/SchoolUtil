@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Verify tag matches package.json version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          if ($version -ne $tag) {
+            Write-Error "Tag ${{ github.ref_name }} does not match package.json version $version"
+            exit 1
+          }
+
+      - name: Set repository for electron-builder
+        shell: pwsh
+        run: |
+          npm pkg set repository.type=git
+          npm pkg set repository.url="https://github.com/${{ github.repository }}.git"
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - name: Build installer and publish to GitHub Releases
+        run: npm run dist -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
