@@ -1,12 +1,39 @@
 import { randomUUID } from "node:crypto";
-import type { AppSettings, PersistedState } from "./store";
+import type { AppSettings, PersistedState, TimetableData } from "./store";
 import { isWidgetId } from "./widget-ids";
 import { normalizeSettings } from "./settings-normalize";
+
+function defaultTimetableForImport(): TimetableData {
+  const periodCount = 7;
+  return {
+    title: "내 시간표",
+    periodCount,
+    grid: Array.from({ length: 5 }, () =>
+      Array.from({ length: periodCount }, () => ""),
+    ),
+  };
+}
+
+/** electron-store 구버전 JSON·일부 필드만 있는 백업을 현재 스키마로 맞춘다. */
+function mergeLegacyStateInput(raw: unknown): Record<string, unknown> {
+  const input =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  return {
+    todos: input.todos ?? [],
+    memos: input.memos ?? [],
+    ddays: input.ddays ?? [],
+    calendarEvents: input.calendarEvents ?? [],
+    timetable: input.timetable ?? defaultTimetableForImport(),
+    layout: input.layout ?? {},
+    settings: input.settings,
+  };
+}
 
 const TOP_KEYS: (keyof PersistedState)[] = [
   "todos",
   "memos",
   "ddays",
+  "calendarEvents",
   "timetable",
   "layout",
   "settings",
@@ -15,6 +42,7 @@ const TOP_KEYS: (keyof PersistedState)[] = [
 const MAX_TODOS = 500;
 const MAX_MEMOS = 20;
 const MAX_DDAYS = 100;
+const MAX_CALENDAR_EVENTS = 500;
 const MAX_TEXT = 4000;
 
 function clampString(value: unknown, max: number): string {
@@ -38,6 +66,36 @@ function sanitizeSettings(raw: unknown): AppSettings | undefined {
           (id) => typeof id === "string" && isWidgetId(id),
         )
       : [],
+    portalNiceUser: clampString(s.portalNiceUser, 120),
+    portalNicePassword: clampString(s.portalNicePassword, 200),
+    portalEdufineUser: clampString(s.portalEdufineUser, 120),
+    portalEdufinePassword: clampString(s.portalEdufinePassword, 200),
+    portalGoeUser: clampString(s.portalGoeUser, 120),
+    portalGoePassword: clampString(s.portalGoePassword, 200),
+    portals: {
+      nice: {
+        enabled: s.portals?.nice?.enabled !== false,
+        url: clampString(s.portals?.nice?.url, 500),
+      },
+      edufine: {
+        enabled: s.portals?.edufine?.enabled !== false,
+        url: clampString(s.portals?.edufine?.url, 500),
+      },
+      goePortal: {
+        enabled: s.portals?.goePortal?.enabled !== false,
+        url: clampString(s.portals?.goePortal?.url, 500),
+      },
+    },
+    portalBrowser: s.portalBrowser,
+    portalEducationOffice: clampString(s.portalEducationOffice, 40),
+    portalLoginMode:
+      s.portalLoginMode === "automation" ? "automation" : "url_only",
+    portalAutoLogin: Boolean(s.portalAutoLogin),
+    portalAutoLoginDelay: s.portalAutoLoginDelay,
+    portalAutomationTarget: s.portalAutomationTarget,
+    portalSessionExtend: Boolean(s.portalSessionExtend),
+    portalSessionExtendMinutes: s.portalSessionExtendMinutes,
+    portalOsCertInput: Boolean(s.portalOsCertInput),
   });
 }
 
@@ -92,6 +150,23 @@ export function validatePatch(partial: unknown): Partial<PersistedState> {
           };
         });
         break;
+      case "calendarEvents":
+        if (!Array.isArray(value)) break;
+        out.calendarEvents = value.slice(0, MAX_CALENDAR_EVENTS).map((ev) => {
+          const row = ev as Record<string, unknown>;
+          const time = clampString(row.time, 8);
+          return {
+            id: clampString(row.id, 64) || randomUUID(),
+            title: clampString(row.title, 200),
+            date: clampString(row.date, 32),
+            time: time || undefined,
+            important: Boolean(row.important),
+            done: Boolean(row.done),
+            createdAt:
+              clampString(row.createdAt, 40) || new Date().toISOString(),
+          };
+        });
+        break;
       case "timetable":
         if (!value || typeof value !== "object") break;
         out.timetable = value as PersistedState["timetable"];
@@ -114,14 +189,20 @@ export function validatePatch(partial: unknown): Partial<PersistedState> {
 }
 
 export function validateFullState(raw: unknown): PersistedState {
-  const patch = validatePatch(raw);
+  const patch = validatePatch(mergeLegacyStateInput(raw));
+  const settings =
+    patch.settings ??
+    normalizeSettings(
+      (raw && typeof raw === "object"
+        ? (raw as Record<string, unknown>).settings
+        : undefined) as AppSettings | undefined,
+    );
   if (
     !patch.todos ||
     !patch.memos ||
     !patch.ddays ||
     !patch.timetable ||
-    !patch.layout ||
-    !patch.settings
+    !patch.layout
   ) {
     throw new Error("백업 파일에 필수 항목이 없습니다.");
   }
@@ -129,8 +210,9 @@ export function validateFullState(raw: unknown): PersistedState {
     todos: patch.todos,
     memos: patch.memos,
     ddays: patch.ddays,
+    calendarEvents: patch.calendarEvents ?? [],
     timetable: patch.timetable,
     layout: patch.layout,
-    settings: patch.settings,
+    settings,
   };
 }

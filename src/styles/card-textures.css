@@ -1,0 +1,87 @@
+/* data-card-texture on .app-shell — 틴트만 바꾸고 알파·블러는 .widget-card 공통 */
+
+[data-card-texture="glass"] .widget-card {
+  /* themes.css --card-glass-* */
+}
+
+[data-card-texture="paper"] .widget-card {
+  --card-glass-r: 255;
+  --card-glass-g: 255;
+  --card-glass-b: 255;
+  box-shadow:
+    var(--shadow-card),
+    inset 0 0 0 1px rgb(0 0 0 / 0.04);
+}
+
+[data-card-texture="memo"] .widget-card {
+  --card-glass-r: 253;
+  --card-glass-g: 244;
+  --card-glass-b: 178;
+  border-color: rgba(180, 140, 60, 0.22);
+}
+
+[data-card-texture="whiteboard"] .widget-card {
+  --card-glass-r: 250;
+  --card-glass-g: 250;
+  --card-glass-b: 250;
+  border: 2px solid #e5e5e5;
+  box-shadow: 0 2px 0 #d4d4d4;
+  backdrop-filter: blur(calc(var(--card-glass-blur) * 0.5)) saturate(1.05);
+  -webkit-backdrop-filter: blur(calc(var(--card-glass-blur) * 0.5)) saturate(1.05);
+}
+
+[data-card-texture="chalkboard"] .widget-card {
+  --card-glass-r: 61;
+  --card-glass-g: 92;
+  --card-glass-b: 74;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #e8f2ea;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+[data-card-texture="chalkboard"] .widget-card .muted,
+[data-card-texture="chalkboard"] .widget-card .widget-header {
+  color: #b8d4be;
+}
+
+[data-card-texture="terminal"] .widget-card {
+  --card-glass-r: 13;
+  --card-glass-g: 17;
+  --card-glass-b: 23;
+  border-color: #30363d;
+  color: #3fb950;
+  font-family: "Cascadia Code", "Consolas", monospace;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+[data-card-texture="terminal"] .widget-card .widget-header,
+[data-card-texture="terminal"] .widget-card .muted {
+  color: #8b949e;
+}
+
+[data-card-texture="chalkboard"] .widget-card input,
+[data-card-texture="chalkboard"] .widget-card textarea,
+[data-card-texture="chalkboard"] .widget-card select,
+[data-card-texture="terminal"] .widget-card input,
+[data-card-texture="terminal"] .widget-card textarea,
+[data-card-texture="terminal"] .widget-card select {
+  color: inherit;
+}
+
+.widget-card.widget-card--accent {
+  background: color-mix(
+    in srgb,
+    var(--accent) 14%,
+    rgb(
+      var(--card-glass-r, 255) var(--card-glass-g, 255) var(--card-glass-b, 255) /
+        var(--card-glass-alpha, 72%)
+    )
+  );
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent);
+}

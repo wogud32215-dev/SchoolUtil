@@ -19,4 +19,9 @@ try {
   /* 마이그레이션 실패해도 앱은 계속 */
 }
 
-void import("./main");
+/** 두 번째 실행은 종료 (전역 단축키·트레이 중복 방지). */
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  void import("./main");
+}

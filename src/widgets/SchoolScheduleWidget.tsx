@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { WidgetFetchError } from "@/components/WidgetFetchState";
+import { useNeisKeyStatus } from "@/hooks/useNeisKeyStatus";
 import type { AppSettings, NeisScheduleRow } from "@/types/state";
 
 type Props = {
@@ -32,6 +34,7 @@ function monthRange(): { fromYmd: string; toYmd: string; label: string } {
 }
 
 export function SchoolScheduleWidget({ settings }: Props) {
+  const { neisReady } = useNeisKeyStatus();
   const [items, setItems] = useState<NeisScheduleRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +75,7 @@ export function SchoolScheduleWidget({ settings }: Props) {
       const n = res.items.length;
       setStatus(
         n > 0
-          ? `${label} 일정 ${n}건을 불러왔습니다.`
+          ? `${label} 일정 ${n}건`
           : `${label} NEIS에 등록된 학사일정이 없습니다.`,
       );
     } catch (e) {
@@ -88,12 +91,7 @@ export function SchoolScheduleWidget({ settings }: Props) {
 
   useEffect(() => {
     void load();
-  }, [
-    load,
-    settings.neisApiKey,
-    settings.neisOfficeCode,
-    settings.neisSchoolCode,
-  ]);
+  }, [load, neisReady, settings.neisOfficeCode, settings.neisSchoolCode]);
 
   const today = todayYmd();
   const upcoming = items.filter((it) => it.ymd >= today).slice(0, 20);
@@ -101,11 +99,13 @@ export function SchoolScheduleWidget({ settings }: Props) {
 
   return (
     <>
-      <div className="input-row">
-        <span className="muted">{monthLabel || "—"} · NEIS 학사일정</span>
+      <div className="widget-toolbar">
+        <span className="widget-toolbar-title">
+          {monthLabel || "—"} · NEIS
+        </span>
         <button
           type="button"
-          className="btn-primary"
+          className="btn-secondary"
           onClick={() => void load()}
           disabled={loading}
           aria-busy={loading}
@@ -119,26 +119,37 @@ export function SchoolScheduleWidget({ settings }: Props) {
       >
         {status}
       </p>
-      {error && <p className="sched-error">{error}</p>}
-      <ul className="sched-list">
-        {upcoming.map((it) => (
-          <li key={`${it.ymd}-${it.name}`} className="sched-item">
-            <time dateTime={formatYmd(it.ymd)}>{formatYmd(it.ymd)}</time>
-            <strong>{it.name}</strong>
-            {it.content && (
-              <span className="muted sched-content">{it.content}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-      {!loading && !error && upcoming.length === 0 && items.length > 0 && (
-        <p className="muted">이번 달 남은 일정이 없습니다.</p>
+      {error && (
+        <WidgetFetchError
+          message={error}
+          onRetry={() => void load()}
+          retryLabel="다시 시도"
+        />
       )}
-      {past.length > 0 && (
+      {!error && (
+        <ul className="sched-list">
+          {upcoming.map((it) => (
+            <li key={`${it.ymd}-${it.name}`} className="sched-item">
+              <time dateTime={formatYmd(it.ymd)}>{formatYmd(it.ymd)}</time>
+              <strong>{it.name}</strong>
+              {it.content && (
+                <span className="muted sched-content">{it.content}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!loading && !error && upcoming.length === 0 && items.length > 0 && (
+        <p className="widget-state-empty muted">이번 달 남은 일정이 없습니다.</p>
+      )}
+      {!loading && !error && upcoming.length === 0 && items.length === 0 && (
+        <p className="widget-state-empty muted">
+          표시할 학사일정이 없습니다. NEIS 키·학교 코드를 확인하세요.
+        </p>
+      )}
+      {past.length > 0 && !error && (
         <>
-          <p className="muted" style={{ marginTop: 12, fontSize: "0.8rem" }}>
-            최근 지난 일정
-          </p>
+          <p className="sched-past-title">최근 지난 일정</p>
           <ul className="sched-list sched-past">
             {past.map((it) => (
               <li key={`p-${it.ymd}-${it.name}`} className="sched-item">

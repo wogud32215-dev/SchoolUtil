@@ -174,7 +174,7 @@ export async function fetchSchoolSchedule(
   if (!neisApiKey?.trim() || !neisOfficeCode?.trim() || !neisSchoolCode?.trim()) {
     return {
       ok: false,
-      error: "설정에서 NEIS API 키·교육청·학교 코드를 입력한 뒤 «설정 저장»을 누르세요.",
+      error: "학교를 선택했는지 확인하세요. NEIS 키가 필요하면 설정에서 본인 키를 입력할 수 있습니다.",
     };
   }
 

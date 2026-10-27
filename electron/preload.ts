@@ -10,13 +10,75 @@ const api = {
     ipcRenderer.invoke("store:patch", partial),
   minimize: () => ipcRenderer.invoke("app:minimize"),
   hide: () => ipcRenderer.invoke("app:hide"),
+  getAppVersion: () => ipcRenderer.invoke("app:version") as Promise<string>,
+  listDisplays: () =>
+    ipcRenderer.invoke("screen:list-displays") as Promise<
+      {
+        id: number;
+        label: string;
+        primary: boolean;
+        workArea: { x: number; y: number; width: number; height: number };
+      }[]
+    >,
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
+  launchPortal: (portalId: import("../src/types/state").PortalId) =>
+    ipcRenderer.invoke("portal:launch", { portalId }),
+  getPortalCredentialStatus: (portalId: import("../src/types/state").PortalId) =>
+    ipcRenderer.invoke("portal:credential-status", { portalId }) as Promise<{
+      hasUser: boolean;
+      hasPassword: boolean;
+    }>,
+  clearPortalCredentials: (portalId: import("../src/types/state").PortalId) =>
+    ipcRenderer.invoke("portal:clear-credentials", { portalId }) as Promise<{
+      ok: boolean;
+    }>,
+  runPortalAutomation: (portalId: import("../src/types/state").PortalId) =>
+    ipcRenderer.invoke("portal:run-automation", { portalId }),
+  openPortalLog: () => ipcRenderer.invoke("portal:open-log"),
+  getPortalDebugHelpUrl: () =>
+    ipcRenderer.invoke("portal:debug-help-url") as Promise<{ url: string }>,
   fetchNeisSchedule: (range?: { fromYmd?: string; toYmd?: string }) =>
     ipcRenderer.invoke("neis:schedule", range ?? {}),
-  fetchNeisMeal: () => ipcRenderer.invoke("neis:meal"),
+  fetchNeisMeal: (range?: { fromYmd?: string; toYmd?: string }) =>
+    ipcRenderer.invoke("neis:meal", range ?? {}),
   fetchWeather: () => ipcRenderer.invoke("weather:current"),
+  searchComciganSchools: (query: string) =>
+    ipcRenderer.invoke("comcigan:search-schools", { query }) as Promise<
+      | {
+          ok: true;
+          schools: {
+            regionName: string;
+            schoolName: string;
+            schoolCode: number;
+          }[];
+        }
+      | { ok: false; error: string }
+    >,
+  listComciganTeachers: (opts: {
+    schoolCode: number;
+    mode: "direct" | "s2h9";
+    proxyBaseUrl?: string;
+  }) =>
+    ipcRenderer.invoke("comcigan:list-teachers", opts) as Promise<
+      | { ok: true; teachers: string[] }
+      | { ok: false; error: string }
+    >,
+  syncComciganTeacherTimetable: () =>
+    ipcRenderer.invoke("comcigan:sync-teacher") as Promise<
+      | { ok: true }
+      | { ok: false; error: string }
+    >,
   searchNeisSchools: (query: string, apiKey?: string) =>
     ipcRenderer.invoke("neis:search-schools", { query, apiKey }),
+  getNeisKeyStatus: () =>
+    ipcRenderer.invoke("neis:key-status") as Promise<
+      import("../src/types/state").NeisKeyStatus
+    >,
+  setAppNeisKey: (key: string) =>
+    ipcRenderer.invoke("neis:set-app-key", { key }) as Promise<
+      | { ok: true; status: import("../src/types/state").NeisKeyStatus }
+      | { ok: false; error: string }
+    >,
   exportBackup: () => ipcRenderer.invoke("backup:export"),
   importBackup: () => ipcRenderer.invoke("backup:import"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
@@ -25,6 +87,13 @@ const api = {
   getPinToFront: (): Promise<boolean> => ipcRenderer.invoke("widget:get-pin"),
   togglePinToFront: (): Promise<boolean> =>
     ipcRenderer.invoke("widget:toggle-pin"),
+  returnWidgetToDesktop: (): Promise<boolean> =>
+    ipcRenderer.invoke("widget:return-desktop"),
+  fitWidgetToScreen: () =>
+    ipcRenderer.invoke("widget:fit-screen") as Promise<
+      { ok: true } | { ok: false; error: string }
+    >,
+  wakeForInput: () => ipcRenderer.invoke("widget:wake-for-input"),
   setWindowShape: (rects: ShapeRect[]) =>
     ipcRenderer.invoke("widget:set-shape", rects),
   onPinChanged: (listener: (pinned: boolean) => void) => {
@@ -45,6 +114,11 @@ const api = {
       ipcRenderer.removeListener("widget:desktop-layer", handler);
     };
   },
+  onRefreshShape: (listener: () => void) => {
+    const handler = () => listener();
+    ipcRenderer.on("widget:refresh-shape", handler);
+    return () => ipcRenderer.removeListener("widget:refresh-shape", handler);
+  },
   onUpdateAvailable: (listener: (payload: { version: string }) => void) => {
     const handler = (_event: IpcRendererEvent, payload: { version: string }) => {
       listener(payload);
@@ -56,6 +130,25 @@ const api = {
     const handler = () => listener();
     ipcRenderer.on("update:downloaded", handler);
     return () => ipcRenderer.removeListener("update:downloaded", handler);
+  },
+  onUpdateNotAvailable: (listener: () => void) => {
+    const handler = () => listener();
+    ipcRenderer.on("update:not-available", handler);
+    return () => ipcRenderer.removeListener("update:not-available", handler);
+  },
+  onUpdateError: (listener: (payload: { message: string }) => void) => {
+    const handler = (_event: IpcRendererEvent, payload: { message: string }) => {
+      listener(payload);
+    };
+    ipcRenderer.on("update:error", handler);
+    return () => ipcRenderer.removeListener("update:error", handler);
+  },
+  onStoreUpdated: (listener: (state: PersistedState) => void) => {
+    const handler = (_event: IpcRendererEvent, next: PersistedState) => {
+      listener(next);
+    };
+    ipcRenderer.on("store:updated", handler);
+    return () => ipcRenderer.removeListener("store:updated", handler);
   },
 };
 

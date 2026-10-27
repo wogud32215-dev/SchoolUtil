@@ -17,7 +17,44 @@ declare global {
       ) => Promise<import("@/types/state").PersistedState>;
       minimize: () => Promise<void>;
       hide: () => Promise<void>;
+      getAppVersion: () => Promise<string>;
+      listDisplays: () => Promise<
+        {
+          id: number;
+          label: string;
+          primary: boolean;
+          workArea: { x: number; y: number; width: number; height: number };
+        }[]
+      >;
       openExternal: (url: string) => Promise<void>;
+      launchPortal: (portalId: import("@/types/state").PortalId) => Promise<
+        | {
+            ok: true;
+            mode: "url_only" | "automation";
+            summary?: string;
+            reason?: "cert_auth";
+          }
+        | { ok: false; error: string }
+      >;
+      runPortalAutomation: (
+        portalId: import("@/types/state").PortalId,
+      ) => Promise<
+        | {
+            ok: true;
+            mode: "url_only" | "automation";
+            summary?: string;
+            reason?: "cert_auth";
+          }
+        | { ok: false; error: string }
+      >;
+      openPortalLog: () => Promise<{ ok: boolean }>;
+      getPortalDebugHelpUrl: () => Promise<{ url: string }>;
+      getPortalCredentialStatus: (
+        portalId: import("@/types/state").PortalId,
+      ) => Promise<{ hasUser: boolean; hasPassword: boolean }>;
+      clearPortalCredentials: (
+        portalId: import("@/types/state").PortalId,
+      ) => Promise<{ ok: boolean }>;
       fetchNeisSchedule: (range?: {
         fromYmd?: string;
         toYmd?: string;
@@ -25,8 +62,36 @@ declare global {
         | { ok: true; items: import("@/types/state").NeisScheduleRow[] }
         | { ok: false; error: string }
       >;
-      fetchNeisMeal: () => Promise<
-        | { ok: true; lines: string[] }
+      fetchNeisMeal: (range?: {
+        fromYmd?: string;
+        toYmd?: string;
+      }) => Promise<
+        | { ok: true; days: import("@/types/state").NeisMealDay[] }
+        | { ok: false; error: string }
+      >;
+      searchComciganSchools: (
+        query: string,
+      ) => Promise<
+        | {
+            ok: true;
+            schools: {
+              regionName: string;
+              schoolName: string;
+              schoolCode: number;
+            }[];
+          }
+        | { ok: false; error: string }
+      >;
+      listComciganTeachers: (opts: {
+        schoolCode: number;
+        mode: "direct" | "s2h9";
+        proxyBaseUrl?: string;
+      }) => Promise<
+        | { ok: true; teachers: string[] }
+        | { ok: false; error: string }
+      >;
+      syncComciganTeacherTimetable: () => Promise<
+        | { ok: true }
         | { ok: false; error: string }
       >;
       fetchWeather: () => Promise<
@@ -47,6 +112,13 @@ declare global {
         | { ok: true; schools: import("@/types/state").NeisSchoolRow[] }
         | { ok: false; error: string }
       >;
+      getNeisKeyStatus: () => Promise<import("@/types/state").NeisKeyStatus>;
+      setAppNeisKey: (
+        key: string,
+      ) => Promise<
+        | { ok: true; status: import("@/types/state").NeisKeyStatus }
+        | { ok: false; error: string }
+      >;
       exportBackup: () => Promise<BackupResult>;
       importBackup: () => Promise<BackupResult>;
       checkForUpdates: () => Promise<
@@ -58,15 +130,26 @@ declare global {
       installUpdate: () => Promise<void>;
       getPinToFront: () => Promise<boolean>;
       togglePinToFront: () => Promise<boolean>;
+      returnWidgetToDesktop: () => Promise<boolean>;
+      fitWidgetToScreen: () => Promise<
+        { ok: true } | { ok: false; error: string }
+      >;
+      wakeForInput: () => Promise<void>;
       setWindowShape: (rects: WidgetShapeRect[]) => Promise<void>;
       onPinChanged: (listener: (pinned: boolean) => void) => () => void;
       onDesktopLayerWarning: (
         listener: (payload: { ok: boolean }) => void,
       ) => () => void;
+      onRefreshShape: (listener: () => void) => () => void;
       onUpdateAvailable: (
         listener: (payload: { version: string }) => void,
       ) => () => void;
       onUpdateDownloaded: (listener: () => void) => () => void;
+      onUpdateNotAvailable: (listener: () => void) => () => void;
+      onUpdateError: (listener: (payload: { message: string }) => void) => () => void;
+      onStoreUpdated: (
+        listener: (state: import("@/types/state").PersistedState) => void,
+      ) => () => void;
     };
   }
 }

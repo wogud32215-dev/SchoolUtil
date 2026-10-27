@@ -47,7 +47,8 @@ export async function searchSchools(
   if (!key) {
     return {
       ok: false,
-      error: "NEIS API 키를 먼저 입력하고 «설정 저장»을 누르세요.",
+      error:
+        "NEIS를 사용할 수 없습니다. 잠시 후 다시 시도하거나 설정에서 본인 NEIS 키를 입력해 보세요.",
     };
   }
   if (q.length < 2) {

@@ -1,8 +1,32 @@
 import { useEffect, useState } from "react";
-import type { AppSettings } from "@/types/state";
-import { DataBackupPanel } from "@/widgets/DataBackupPanel";
-import { SchoolSearchPanel } from "@/widgets/SchoolSearchPanel";
+import type {
+  AppSettings,
+  LayoutPreset,
+  TodayGlanceSections,
+} from "@/types/state";
+import { defaultTodayGlanceSections } from "@/utils/todayGlance";
 import {
+  DEFAULT_SETTINGS_DOCK_X,
+  DEFAULT_SETTINGS_DOCK_Y,
+} from "@/utils/settingsDockPosition";
+import { DesignSettingsSection } from "@/components/DesignSettingsSection";
+import { SettingsRow } from "@/components/settings/SettingsRow";
+import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
+import { SettingsSwitch } from "@/components/settings/SettingsSwitch";
+import {
+  SettingsToggleChip,
+  SettingsToggleChipGrid,
+} from "@/components/settings/SettingsToggleChip";
+import { SettingsTabNav } from "@/components/settings/SettingsTabNav";
+import type { SettingsTabId } from "@/components/settings/settingsTabs";
+import { DataBackupPanel } from "@/widgets/DataBackupPanel";
+import { useNeisKeyStatus } from "@/hooks/useNeisKeyStatus";
+import { NeisAppKeyAdminPanel } from "@/widgets/NeisAppKeyAdminPanel";
+import { ComciganTimetableSection } from "@/components/ComciganTimetableSection";
+import { SchoolSearchPanel } from "@/widgets/SchoolSearchPanel";
+import { WorkPortalSettingsSection } from "@/widgets/WorkPortalSettingsSection";
+import {
+  LAYOUT_PRESET_OPTIONS,
   WIDGET_TOGGLE_LABELS,
   type WidgetId,
 } from "@/widgets/registry";
@@ -10,8 +34,31 @@ import {
 type Props = {
   settings: AppSettings;
   onSave: (settings: AppSettings) => Promise<boolean>;
+  onApplyLayoutPreset: (preset: LayoutPreset) => Promise<boolean>;
   onResetLayout: () => void;
+  onPreviewTodayGlance?: () => void;
 };
+
+const TODAY_GLANCE_SECTION_LABELS: {
+  key: keyof TodayGlanceSections;
+  label: string;
+}[] = [
+  { key: "todos", label: "할 일" },
+  { key: "timetable", label: "오늘 수업" },
+  { key: "meal", label: "급식" },
+  { key: "calendar", label: "오늘 일정" },
+  { key: "dday", label: "D-Day" },
+  { key: "memo", label: "메모" },
+  { key: "weather", label: "날씨" },
+];
+
+function todayGlanceSectionsEqual(
+  a: TodayGlanceSections,
+  b: TodayGlanceSections,
+): boolean {
+  const keys = Object.keys(defaultTodayGlanceSections()) as (keyof TodayGlanceSections)[];
+  return keys.every((k) => a[k] === b[k]);
+}
 
 function disabledEqual(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
@@ -23,6 +70,15 @@ function disabledEqual(a: string[], b: string[]): boolean {
 function settingsEqual(a: AppSettings, b: AppSettings): boolean {
   return (
     a.theme === b.theme &&
+    a.fontFamily === b.fontFamily &&
+    a.fontWeightLevel === b.fontWeightLevel &&
+    a.uiDensity === b.uiDensity &&
+    a.cardTexture === b.cardTexture &&
+    a.accentCard === b.accentCard &&
+    a.backgroundFill === b.backgroundFill &&
+    a.cardOpacity === b.cardOpacity &&
+    a.designPeek === b.designPeek &&
+    a.layoutPreset === b.layoutPreset &&
     a.openAtLogin === b.openAtLogin &&
     a.neisApiKey === b.neisApiKey &&
     a.neisOfficeCode === b.neisOfficeCode &&
@@ -30,11 +86,46 @@ function settingsEqual(a: AppSettings, b: AppSettings): boolean {
     a.schoolName === b.schoolName &&
     a.onboardingDone === b.onboardingDone &&
     a.displayMode === b.displayMode &&
+    a.widgetMonitor === b.widgetMonitor &&
+    a.widgetLockToScreen === b.widgetLockToScreen &&
+    a.settingsDockX === b.settingsDockX &&
+    a.settingsDockY === b.settingsDockY &&
     a.globalShortcuts === b.globalShortcuts &&
     a.weatherLabel === b.weatherLabel &&
     a.weatherLat === b.weatherLat &&
     a.weatherLon === b.weatherLon &&
-    disabledEqual(a.disabledWidgets, b.disabledWidgets)
+    disabledEqual(a.disabledWidgets, b.disabledWidgets) &&
+    a.todayGlanceEnabled === b.todayGlanceEnabled &&
+    a.todayGlanceLastShownDate === b.todayGlanceLastShownDate &&
+    a.todayGlanceFontSize === b.todayGlanceFontSize &&
+    todayGlanceSectionsEqual(a.todayGlanceSections, b.todayGlanceSections) &&
+    a.portalBrowser === b.portalBrowser &&
+    a.portals.nice.enabled === b.portals.nice.enabled &&
+    a.portals.nice.url === b.portals.nice.url &&
+    a.portals.edufine.enabled === b.portals.edufine.enabled &&
+    a.portals.edufine.url === b.portals.edufine.url &&
+    a.portals.goePortal.enabled === b.portals.goePortal.enabled &&
+    a.portals.goePortal.url === b.portals.goePortal.url &&
+    a.portalNiceUser === b.portalNiceUser &&
+    a.portalNicePassword === b.portalNicePassword &&
+    a.portalEdufineUser === b.portalEdufineUser &&
+    a.portalEdufinePassword === b.portalEdufinePassword &&
+    a.portalGoeUser === b.portalGoeUser &&
+    a.portalGoePassword === b.portalGoePassword &&
+    a.portalEducationOffice === b.portalEducationOffice &&
+    a.portalLoginMode === b.portalLoginMode &&
+    a.portalAutoLogin === b.portalAutoLogin &&
+    a.portalAutoLoginDelay === b.portalAutoLoginDelay &&
+    a.portalAutomationTarget === b.portalAutomationTarget &&
+    a.portalSessionExtend === b.portalSessionExtend &&
+    a.portalSessionExtendMinutes === b.portalSessionExtendMinutes &&
+    a.portalOsCertInput === b.portalOsCertInput &&
+    a.timetableAutoSync === b.timetableAutoSync &&
+    a.timetableFetchMode === b.timetableFetchMode &&
+    a.timetableProxyBaseUrl === b.timetableProxyBaseUrl &&
+    a.comciganSchoolCode === b.comciganSchoolCode &&
+    a.comciganSchoolName === b.comciganSchoolName &&
+    a.comciganTeacherName === b.comciganTeacherName
   );
 }
 
@@ -52,22 +143,62 @@ function setWidgetEnabled(
   return { ...draft, disabledWidgets: [...disabled] };
 }
 
+type DisplayOption = {
+  id: number;
+  label: string;
+  primary: boolean;
+};
+
+function widgetMonitorSelectValue(
+  monitor: AppSettings["widgetMonitor"],
+): string {
+  if (monitor === "all") return "all";
+  if (typeof monitor === "number") return `id:${monitor}`;
+  return "primary";
+}
+
+function widgetMonitorFromSelect(value: string): AppSettings["widgetMonitor"] {
+  if (value === "all") return "all";
+  if (value === "primary") return "primary";
+  if (value.startsWith("id:")) {
+    const id = Number(value.slice(3));
+    if (Number.isFinite(id)) return id;
+  }
+  return "primary";
+}
+
 export function SettingsWidget({
   settings,
   onSave,
+  onApplyLayoutPreset,
   onResetLayout,
+  onPreviewTodayGlance,
 }: Props) {
+  const [tab, setTab] = useState<SettingsTabId>("design");
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [savedHint, setSavedHint] = useState<string | null>(null);
   const [storePath, setStorePath] = useState<string | null>(null);
+  const [displays, setDisplays] = useState<DisplayOption[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showPersonalNeisKey, setShowPersonalNeisKey] = useState(false);
+  const { status: neisKeyStatus, refresh: refreshNeisKey } = useNeisKeyStatus();
 
   useEffect(() => {
     setDraft(settings);
   }, [settings]);
 
   useEffect(() => {
+    if (settings.neisApiKey.trim()) {
+      setShowPersonalNeisKey(true);
+    }
+  }, [settings.neisApiKey]);
+
+  useEffect(() => {
     window.schoolUtil?.getStorePath?.().then(setStorePath).catch(() => {});
+    window.schoolUtil
+      ?.listDisplays?.()
+      .then((list) => setDisplays(list))
+      .catch(() => {});
   }, []);
 
   const dirty = !settingsEqual(draft, settings);
@@ -83,6 +214,7 @@ export function SettingsWidget({
     const ok = await onSave(draft);
     setSaving(false);
     if (ok) {
+      await refreshNeisKey();
       setSavedHint(
         "저장되었습니다. 화면 배치를 바꿨으면 창이 다시 열립니다. 학사일정은 새로고침하세요.",
       );
@@ -92,197 +224,491 @@ export function SettingsWidget({
     }
   }
 
+  async function applyLayoutPreset(preset: LayoutPreset) {
+    if (preset === draft.layoutPreset) return;
+    const label =
+      LAYOUT_PRESET_OPTIONS.find((o) => o.id === preset)?.label ?? preset;
+    const ok = window.confirm(
+      `「${label}」 배치로 바꿉니다. 카드 위치·크기가 프리셋대로 바뀝니다. 계속할까요?`,
+    );
+    if (!ok) return;
+    await onApplyLayoutPreset(preset);
+  }
+
   return (
-    <div className="settings-panel">
-      <label>
-        테마
-        <select
-          value={draft.theme}
-          onChange={(e) =>
-            patch({ theme: e.target.value as AppSettings["theme"] })
-          }
-        >
-          <option value="blue">파랑</option>
-          <option value="green">초록</option>
-          <option value="dark">다크</option>
-        </select>
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={draft.openAtLogin}
-          onChange={(e) => patch({ openAtLogin: e.target.checked })}
-        />{" "}
-        Windows 시작 시 실행
-      </label>
-      <label>
-        화면 배치
-        <select
-          value={draft.displayMode}
-          onChange={(e) =>
-            patch({
-              displayMode: e.target.value as AppSettings["displayMode"],
-            })
-          }
-        >
-          <option value="widget">위젯 (바탕화면에 얹기)</option>
-          <option value="window">일반 창 (전체 화면)</option>
-        </select>
-      </label>
-      <p className="muted" style={{ margin: 0 }}>
-        위젯 모드: 카드 밖은 바탕화면이 보입니다. 앞으로 보기 Ctrl+Alt+D · 비상
-        탈출 Ctrl+Alt+Shift+D
-      </p>
-      <button type="button" onClick={onResetLayout}>
-        위젯 배치 기본값으로
-      </button>
-      <p className="muted" style={{ margin: 0, fontSize: "0.8rem" }}>
-        카드가 겹치거나 잘리면 눌러 보세요. 크기·위치는 카드 제목줄을 드래그해
-        조절할 수 있습니다.
-      </p>
-      <label>
-        <input
-          type="checkbox"
-          checked={draft.globalShortcuts}
-          onChange={(e) => patch({ globalShortcuts: e.target.checked })}
-        />{" "}
-        전역 단축키 사용 (앞으로 보기 · 비상 탈출)
-      </label>
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)" }} />
-      <p className="muted" style={{ margin: "0 0 4px" }}>
-        표시할 위젯 (설정 카드는 항상 표시)
-      </p>
-      <div className="settings-widget-toggles">
-        {WIDGET_TOGGLE_LABELS.map(({ id, label }) => {
-          const enabled = !draft.disabledWidgets.includes(id);
-          return (
-            <label key={id}>
-              <input
-                type="checkbox"
-                checked={enabled}
+    <div className="settings-panel settings-panel--tabbed">
+      <SettingsTabNav active={tab} onChange={setTab} />
+
+      <div className="settings-tab-scroll">
+        {tab === "design" && (
+          <DesignSettingsSection settings={settings} onDesignSave={onSave} />
+        )}
+
+        {tab === "widget" && (
+          <section className="settings-tab-pane" aria-label="위젯">
+            <SettingsRow
+              title="제일 메이트"
+              hint="앱을 켜면 하루 한 번(약 5초 후) 모아 보여 줍니다. 내용이 없으면 안내 문구만 나옵니다."
+            >
+              <div className="settings-mate-card">
+                <SettingsSwitch
+                  checked={draft.todayGlanceEnabled}
+                  onChange={(v) => patch({ todayGlanceEnabled: v })}
+                  label="실행 시 자동으로 보기"
+                />
+                <div className="settings-field">
+                  <span className="settings-field-label">글자 크기</span>
+                  <SettingsSegmented
+                    aria-label="글자 크기"
+                    value={draft.todayGlanceFontSize}
+                    options={[
+                      { value: "normal", label: "보통" },
+                      { value: "large", label: "크게" },
+                      { value: "xlarge", label: "아주 크게" },
+                    ]}
+                    onChange={(v) => patch({ todayGlanceFontSize: v })}
+                  />
+                </div>
+                <div className="settings-field">
+                  <span className="settings-field-label">보일 칸</span>
+                  <SettingsToggleChipGrid>
+                    {TODAY_GLANCE_SECTION_LABELS.map(({ key, label }) => (
+                      <SettingsToggleChip
+                        key={key}
+                        pressed={draft.todayGlanceSections[key]}
+                        onPressedChange={(on) =>
+                          patch({
+                            todayGlanceSections: {
+                              ...draft.todayGlanceSections,
+                              [key]: on,
+                            },
+                          })
+                        }
+                      >
+                        {label}
+                      </SettingsToggleChip>
+                    ))}
+                  </SettingsToggleChipGrid>
+                </div>
+                {onPreviewTodayGlance ? (
+                  <button
+                    type="button"
+                    className="settings-inline-btn settings-inline-btn--primary settings-mate-preview"
+                    onClick={onPreviewTodayGlance}
+                  >
+                    지금 한 번 보기
+                  </button>
+                ) : null}
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              title="화면 배치"
+              hint="카드 크기·위치 프리셋입니다. 적용 시 기존 배치가 바뀝니다."
+            >
+              <div
+                className="design-layout-grid"
+                role="radiogroup"
+                aria-label="화면 배치"
+              >
+                {LAYOUT_PRESET_OPTIONS.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="design-layout-chip"
+                    role="radio"
+                    aria-checked={settings.layoutPreset === id}
+                    onClick={() => void applyLayoutPreset(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              title="배치 초기화"
+              hint="카드가 겹치거나 잘리면 눌러 보세요. 제목줄을 드래그해 위치·크기를 조절할 수 있습니다."
+            >
+              <button type="button" className="settings-inline-btn" onClick={onResetLayout}>
+                위젯 배치 기본값으로
+              </button>
+            </SettingsRow>
+
+            <SettingsRow
+              title="표시할 위젯"
+              hint="끈 위젯은 대시보드에서 숨겨집니다."
+            >
+              <SettingsToggleChipGrid>
+                {WIDGET_TOGGLE_LABELS.map(({ id, label }) => {
+                  const enabled = !draft.disabledWidgets.includes(id);
+                  return (
+                    <SettingsToggleChip
+                      key={id}
+                      pressed={enabled}
+                      onPressedChange={(on) =>
+                        setDraft((prev) => setWidgetEnabled(prev, id, on))
+                      }
+                    >
+                      {label}
+                    </SettingsToggleChip>
+                  );
+                })}
+              </SettingsToggleChipGrid>
+            </SettingsRow>
+          </section>
+        )}
+
+        {tab === "screen" && (
+          <section className="settings-tab-pane" aria-label="화면">
+            <SettingsRow title="시작 프로그램">
+              <label className="settings-check-line">
+                <input
+                  type="checkbox"
+                  checked={draft.openAtLogin}
+                  onChange={(e) => patch({ openAtLogin: e.target.checked })}
+                />
+                Windows 시작 시 SchoolUtil 실행
+              </label>
+            </SettingsRow>
+
+            <SettingsRow
+              title="표시 방식"
+              hint="위젯 모드는 바탕화면 위에 카드만 띄웁니다. 일반 창은 앱 창 전체를 씁니다."
+            >
+              <select
+                className="settings-control"
+                value={draft.displayMode}
                 onChange={(e) =>
-                  setDraft((prev) => setWidgetEnabled(prev, id, e.target.checked))
+                  patch({
+                    displayMode: e.target.value as AppSettings["displayMode"],
+                  })
                 }
+              >
+                <option value="widget">위젯 (바탕화면에 얹기)</option>
+                <option value="window">일반 창 (전체 화면)</option>
+              </select>
+            </SettingsRow>
+
+            {draft.displayMode === "widget" && (
+              <SettingsRow title="위젯 모니터">
+                <select
+                  className="settings-control"
+                  value={widgetMonitorSelectValue(draft.widgetMonitor)}
+                  onChange={(e) =>
+                    patch({
+                      widgetMonitor: widgetMonitorFromSelect(e.target.value),
+                    })
+                  }
+                >
+                  <option value="primary">주 모니터</option>
+                  {displays
+                    .filter((d) => !d.primary)
+                    .map((d) => (
+                      <option key={d.id} value={`id:${d.id}`}>
+                        {d.label}
+                      </option>
+                    ))}
+                  {displays.length > 1 && (
+                    <option value="all">
+                      모든 모니터 (드래그로 보조 화면에 배치)
+                    </option>
+                  )}
+                </select>
+                {draft.widgetMonitor === "all" ? (
+                  <p className="settings-row-hint" style={{ marginTop: 8 }}>
+                    그리드가 넓어집니다. 카드를 오른쪽으로 드래그하면 보조 모니터에
+                    놓을 수 있습니다.
+                  </p>
+                ) : null}
+              </SettingsRow>
+            )}
+
+            {draft.displayMode === "widget" && (
+              <SettingsRow
+                title="화면에 맞춰 고정"
+                hint="위젯 창을 선택한 모니터 작업 영역(작업 표시줄 제외)에 맞춥니다. 해상도·배율이 바뀌면 자동으로 다시 맞춥니다."
+              >
+                <SettingsSwitch
+                  checked={draft.widgetLockToScreen}
+                  onChange={(v) => patch({ widgetLockToScreen: v })}
+                  label="모니터에 자동 맞춤·고정"
+                />
+                <button
+                  type="button"
+                  className="settings-inline-btn"
+                  style={{ marginTop: 12 }}
+                  onClick={() => void window.schoolUtil?.fitWidgetToScreen?.()}
+                >
+                  지금 화면에 맞추기
+                </button>
+              </SettingsRow>
+            )}
+
+            <SettingsRow
+              title="설정 독"
+              hint="하단 톱니바퀴를 끌어 원하는 위치에 놓을 수 있습니다. 두 번 누르면 아래 중앙으로 돌아갑니다."
+            >
+              <button
+                type="button"
+                className="settings-inline-btn"
+                onClick={() => {
+                  const next = {
+                    ...draft,
+                    settingsDockX: DEFAULT_SETTINGS_DOCK_X,
+                    settingsDockY: DEFAULT_SETTINGS_DOCK_Y,
+                  };
+                  setDraft(next);
+                  void onSave(next);
+                }}
+              >
+                설정 독 위치 초기화
+              </button>
+            </SettingsRow>
+
+            <SettingsRow
+              title="단축키"
+              hint="숨기기·맨 앞 보기 Ctrl+Alt+D · 비상 탈출 Ctrl+Alt+Shift+D"
+            >
+              <label className="settings-check-line">
+                <input
+                  type="checkbox"
+                  checked={draft.globalShortcuts}
+                  onChange={(e) => patch({ globalShortcuts: e.target.checked })}
+                />
+                전역 단축키 사용 (다른 앱 위에서도 동작)
+              </label>
+            </SettingsRow>
+          </section>
+        )}
+
+        {tab === "school" && (
+          <section className="settings-tab-pane" aria-label="학교">
+            {neisKeyStatus?.hasAppKey && (
+              <p className="muted" style={{ margin: "0 0 12px" }}>
+                급식·학사일정은 앱에 연결된 NEIS 키로 불러옵니다. 학교만 검색해
+                선택하면 됩니다.
+              </p>
+            )}
+
+            <SettingsRow title="학교 검색" hint="이름으로 검색해 코드를 채웁니다.">
+              <SchoolSearchPanel draft={draft} onApply={(p) => patch(p)} />
+            </SettingsRow>
+
+            <ComciganTimetableSection draft={draft} onPatch={(p) => patch(p)} />
+
+            {neisKeyStatus && (
+              <NeisAppKeyAdminPanel
+                status={neisKeyStatus}
+                onUpdated={refreshNeisKey}
               />
-              {label}
-            </label>
-          );
-        })}
-      </div>
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)" }} />
-      <p className="muted" style={{ margin: 0 }}>
-        날씨 (Open-Meteo, 무료)
-      </p>
-      <label>
-        지역 이름
-        <input
-          value={draft.weatherLabel}
-          onChange={(e) => patch({ weatherLabel: e.target.value })}
-          placeholder="예: 서울"
-        />
-      </label>
-      <label>
-        위도
-        <input
-          type="number"
-          step="0.0001"
-          value={draft.weatherLat}
-          onChange={(e) =>
-            patch({ weatherLat: Number.parseFloat(e.target.value) || 0 })
-          }
-        />
-      </label>
-      <label>
-        경도
-        <input
-          type="number"
-          step="0.0001"
-          value={draft.weatherLon}
-          onChange={(e) =>
-            patch({ weatherLon: Number.parseFloat(e.target.value) || 0 })
-          }
-        />
-      </label>
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)" }} />
-      <p className="muted" style={{ margin: 0 }}>
-        학사일정 · 급식 · 학교 검색(NEIS) —{" "}
-        <button
-          type="button"
-          className="btn-primary"
-          style={{ padding: "2px 8px", fontSize: "0.8rem" }}
-          onClick={() =>
-            window.schoolUtil?.openExternal("https://open.neis.go.kr/")
-          }
-        >
-          NEIS 키 발급
-        </button>
-      </p>
-      <label>
-        NEIS API Key
-        <input
-          value={draft.neisApiKey}
-          onChange={(e) => patch({ neisApiKey: e.target.value })}
-          placeholder="발급받은 키"
-        />
-      </label>
-      <SchoolSearchPanel draft={draft} onApply={(p) => patch(p)} />
-      <label>
-        교육청 코드 (ATPT_OFCDC_SC_CODE)
-        <input
-          value={draft.neisOfficeCode}
-          onChange={(e) => patch({ neisOfficeCode: e.target.value })}
-          placeholder="예: B10"
-        />
-      </label>
-      <label>
-        학교 코드 (SD_SCHUL_CODE)
-        <input
-          value={draft.neisSchoolCode}
-          onChange={(e) => patch({ neisSchoolCode: e.target.value })}
-          placeholder="학교 고유 코드"
-        />
-      </label>
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)" }} />
-      <p className="muted" style={{ margin: 0 }}>데이터 백업 · 업데이트</p>
-      <DataBackupPanel />
-      <div className="settings-save-row">
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => void save()}
-          disabled={!dirty || saving}
-        >
-          {saving ? "저장 중…" : "설정 저장"}
-        </button>
-        {dirty && !saving && (
-          <span className="muted" style={{ fontSize: "0.85rem" }}>
-            변경 내용이 있습니다
-          </span>
+            )}
+
+            <SettingsRow
+              title="내 NEIS 키 (선택)"
+              hint="앱 키가 한도에 걸리거나 오류가 나면 data.go.kr에서 발급한 키를 넣으세요."
+            >
+              <div className="settings-field-stack">
+                {!showPersonalNeisKey ? (
+                  <button
+                    type="button"
+                    className="settings-inline-btn"
+                    onClick={() => setShowPersonalNeisKey(true)}
+                  >
+                    본인 키 입력
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="settings-inline-btn settings-inline-btn--primary"
+                      onClick={() =>
+                        void window.schoolUtil?.openExternal(
+                          "https://open.neis.go.kr/",
+                        )
+                      }
+                    >
+                      NEIS 키 발급 페이지
+                    </button>
+                    <input
+                      className="settings-control"
+                      type="password"
+                      autoComplete="off"
+                      value={draft.neisApiKey}
+                      onChange={(e) => patch({ neisApiKey: e.target.value })}
+                      placeholder={
+                        neisKeyStatus?.hasPersonalKey
+                          ? "저장된 키가 있습니다. 바꾸려면 새 키 입력"
+                          : "발급받은 API Key"
+                      }
+                    />
+                    {neisKeyStatus?.hasPersonalKey && (
+                      <p className="muted" style={{ margin: 0 }}>
+                        개인 키는 이 PC에만 암호화 저장되며 백업 JSON에는 포함되지
+                        않습니다.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </SettingsRow>
+
+            <SettingsRow title="교육청 코드">
+              <input
+                className="settings-control"
+                value={draft.neisOfficeCode}
+                onChange={(e) => patch({ neisOfficeCode: e.target.value })}
+                placeholder="예: B10 (ATPT_OFCDC_SC_CODE)"
+              />
+            </SettingsRow>
+
+            <SettingsRow title="학교 코드">
+              <input
+                className="settings-control"
+                value={draft.neisSchoolCode}
+                onChange={(e) => patch({ neisSchoolCode: e.target.value })}
+                placeholder="SD_SCHUL_CODE"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              title="날씨"
+              hint="Open-Meteo 무료 API · 위도·경도는 지역에 맞게 조정하세요."
+            >
+              <div className="settings-field-stack">
+                <input
+                  className="settings-control"
+                  value={draft.weatherLabel}
+                  onChange={(e) => patch({ weatherLabel: e.target.value })}
+                  placeholder="지역 이름 (예: 서울)"
+                />
+                <div className="settings-coord-row">
+                  <label className="settings-coord-field">
+                    <span>위도</span>
+                    <input
+                      className="settings-control"
+                      type="number"
+                      step="0.0001"
+                      value={draft.weatherLat}
+                      onChange={(e) =>
+                        patch({
+                          weatherLat: Number.parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="settings-coord-field">
+                    <span>경도</span>
+                    <input
+                      className="settings-control"
+                      type="number"
+                      step="0.0001"
+                      value={draft.weatherLon}
+                      onChange={(e) =>
+                        patch({
+                          weatherLon: Number.parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            </SettingsRow>
+          </section>
         )}
-        {savedHint && (
-          <span
-            className={
-              savedHint.startsWith("저장되었")
-                ? "settings-saved"
-                : "sched-error"
-            }
-            role="status"
+
+        {tab === "data" && (
+          <section className="settings-tab-pane" aria-label="데이터">
+            <SettingsRow
+              title="백업 · 업데이트"
+              hint="위 안내를 확인한 뒤 보내기·불러오기를 사용하세요."
+            >
+              <DataBackupPanel />
+            </SettingsRow>
+            {storePath ? (
+              <p className="settings-footnote">데이터 파일: {storePath}</p>
+            ) : null}
+          </section>
+        )}
+
+        {tab === "portal" && (
+          <section className="settings-tab-pane settings-tab-pane--portal" aria-label="업무포털">
+            <WorkPortalSettingsSection
+              draft={draft}
+              onPatch={(p) => patch(p)}
+              onSave={async () => {
+                await save();
+              }}
+            />
+          </section>
+        )}
+
+        {tab === "help" && (
+          <section className="settings-tab-pane" aria-label="도움말">
+            <SettingsRow title="단축키">
+              <ul className="settings-help-list">
+                <li><kbd>Ctrl+Alt+D</kbd> — 위젯 숨기기 / 다시 맨 앞에 보기</li>
+                <li><kbd>Ctrl+Alt+Shift+D</kbd> — 비상 탈출 (일반 창)</li>
+              </ul>
+            </SettingsRow>
+            <SettingsRow title="위젯 모드">
+              <p className="settings-plain-text">
+                카드 밖 영역은 바탕화면이 보입니다. 설정은 하단 톱니바퀴 또는 제목줄
+                버튼에서 엽니다.
+              </p>
+            </SettingsRow>
+            <SettingsRow title="문서">
+              <button
+                type="button"
+                className="settings-inline-btn"
+                onClick={() =>
+                  void window.schoolUtil?.openExternal(
+                    "https://github.com/wogud32215-dev/SchoolUtil",
+                  )
+                }
+              >
+                GitHub 저장소
+              </button>
+            </SettingsRow>
+          </section>
+        )}
+      </div>
+
+      <footer className="settings-panel-footer">
+        <div className="settings-save-row">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => void save()}
+            disabled={!dirty || saving}
           >
-            {savedHint}
-          </span>
+            {saving ? "저장 중…" : "설정 저장"}
+          </button>
+          {dirty && !saving && (
+            <span className="muted" style={{ fontSize: "0.85rem" }}>
+              변경 내용이 있습니다
+            </span>
+          )}
+          {savedHint && (
+            <span
+              className={
+                savedHint.startsWith("저장되었")
+                  ? "settings-saved"
+                  : "sched-error"
+              }
+              role="status"
+            >
+              {savedHint}
+            </span>
+          )}
+        </div>
+        {!dirty && !savedHint && tab !== "design" && (
+          <p className="settings-footnote">
+            디자인 탭의 색·질감은 누르면 바로 저장됩니다. 그 외 항목은 «설정 저장»을
+            눌러야 반영됩니다.
+          </p>
         )}
-      </div>
-      {storePath && (
-        <p className="muted" style={{ margin: 0, fontSize: "0.75rem" }}>
-          데이터 파일: {storePath}
-        </p>
-      )}
-      {!dirty && !savedHint && (
-        <p className="muted" style={{ margin: 0, fontSize: "0.8rem" }}>
-          «설정 저장»을 누르면 위 경로에 기록됩니다. npm run dev를 다시 켜도
-          유지됩니다.
-        </p>
-      )}
+      </footer>
     </div>
   );
 }

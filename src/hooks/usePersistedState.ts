@@ -6,10 +6,20 @@ const fallback: PersistedState = {
   todos: [],
   memos: [],
   ddays: [],
+  calendarEvents: [],
   timetable: defaultTimetable(),
   layout: {},
   settings: {
-    theme: "blue",
+    theme: "sky",
+    fontFamily: "pretendard",
+    fontWeightLevel: "medium",
+    uiDensity: "cozy",
+    cardTexture: "glass",
+    accentCard: "none",
+    backgroundFill: "transparent",
+    cardOpacity: 72,
+    designPeek: false,
+    layoutPreset: "bento",
     openAtLogin: false,
     neisApiKey: "",
     neisOfficeCode: "",
@@ -19,9 +29,59 @@ const fallback: PersistedState = {
     weatherLon: 126.978,
     weatherLabel: "서울",
     displayMode: "widget",
+    widgetMonitor: "primary",
+    widgetLockToScreen: true,
+    settingsDockX: 50,
+    settingsDockY: 94,
     globalShortcuts: true,
     disabledWidgets: [],
+    todayGlanceEnabled: true,
+    todayGlanceLastShownDate: "",
+    todayGlanceFontSize: "large",
+    todayGlanceSections: {
+      todos: true,
+      timetable: true,
+      meal: true,
+      calendar: true,
+      dday: true,
+      memo: false,
+      weather: false,
+    },
     onboardingDone: false,
+    portalBrowser: "default",
+    portalEducationOffice: "custom",
+    portalLoginMode: "url_only",
+    portalAutoLogin: false,
+    portalAutoLoginDelay: "20",
+    portalAutomationTarget: "nice",
+    portalSessionExtend: false,
+    portalSessionExtendMinutes: 50,
+    portalOsCertInput: false,
+    portals: {
+      nice: { enabled: true, url: "https://www.neis.go.kr/" },
+      edufine: { enabled: true, url: "https://www.edufine.go.kr/" },
+      goePortal: {
+        enabled: true,
+        url: "https://goe.eduptl.kr/bpm_lgn_lg00_001.do",
+      },
+    },
+    portalNiceUser: "",
+    portalNicePassword: "",
+    portalEdufineUser: "",
+    portalEdufinePassword: "",
+    portalGoeUser: "",
+    portalGoePassword: "",
+    timetableAutoSync: false,
+    timetableFetchMode: "direct",
+    timetableProxyBaseUrl: "https://timetable.s2h9.dev",
+    comciganSchoolCode: "",
+    comciganSchoolName: "",
+    comciganTeacherName: "",
+    timetableLastSyncAt: "",
+    timetableLastSyncError: "",
+    timetableLastSyncVia: "",
+    timetableLastSyncReason: "",
+    timetableSubstituteNotifiedKey: "",
   },
 };
 
@@ -50,6 +110,14 @@ export function usePersistedState() {
         setState(fallback);
         setReady(true);
       });
+  }, []);
+
+  useEffect(() => {
+    const api = window.schoolUtil;
+    if (!api?.onStoreUpdated) return;
+    return api.onStoreUpdated((next) => {
+      setState(next);
+    });
   }, []);
 
   const patch = useCallback(async (partial: Partial<PersistedState>) => {

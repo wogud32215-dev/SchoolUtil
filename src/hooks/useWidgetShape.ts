@@ -2,15 +2,25 @@ import { useCallback, useEffect, useRef } from "react";
 
 type ShapeRect = { x: number; y: number; width: number; height: number };
 
-/** setShape 클리핑이 테두리·서브픽셀에서 잘리지 않도록 여유 */
+/** 레이아웃 변경 시 메인 프로세스에 클릭 통과 설정을 다시 맞춘다 (setShape 미사용). */
 const SHAPE_PAD = 4;
 
 const SHAPE_SELECTORS = [
   ".title-bar",
   ".widget-card",
-  ".pin-banner",
   ".onboarding-banner",
   ".persist-banner",
+  ".app-settings-dock",
+  ".settings-modal",
+  ".settings-modal-backdrop",
+  ".cal-day-modal",
+  ".cal-day-modal-backdrop",
+  ".today-glance-modal",
+  ".today-glance-backdrop",
+  ".comcigan-substitute-modal",
+  ".comcigan-substitute-backdrop",
+  ".tt-manual-editor",
+  ".tt-manual-editor-backdrop",
 ];
 
 function rectToShape(r: DOMRect): ShapeRect {
@@ -74,6 +84,7 @@ export function useWidgetShape(enabled: boolean, layoutKey: string) {
     );
     window.addEventListener("resize", report);
     dashboard?.addEventListener("scroll", report, { passive: true });
+    const offRefresh = api.onRefreshShape?.(() => report());
 
     const onTransitionEnd = (e: TransitionEvent) => {
       const t = e.target;
@@ -94,6 +105,7 @@ export function useWidgetShape(enabled: boolean, layoutKey: string) {
       window.removeEventListener("resize", report);
       dashboard?.removeEventListener("scroll", report);
       document.removeEventListener("transitionend", onTransitionEnd);
+      offRefresh?.();
       void api.setWindowShape([]);
     };
   }, [enabled, layoutKey]);

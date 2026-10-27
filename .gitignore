@@ -11,3 +11,5 @@ release-nsis-test
 .DS_Store
 Thumbs.db
 Desktop.ini
+config/neis-shared.key
+build/neis-shared.v1.bin

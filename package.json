@@ -1,6 +1,6 @@
 {
   "name": "schoolutil",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "SchoolUtil — Windows 바탕화면 종합 유틸",
   "main": "dist-electron/bootstrap.js",
   "author": "SchoolUtil",
@@ -17,10 +17,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "electron:install": "node node_modules/electron/install.js",
+    "electron:unblock": "node scripts/unblock-electron.mjs",
+    "postinstall": "node scripts/ensure-electron.mjs",
     "clean:build": "rimraf dist dist-electron",
     "clean": "npm run clean:build && rimraf release",
     "prebuild": "npm run clean:build",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/prepare-neis-shared.mjs && tsc -b && vite build",
     "dist": "npm run build && electron-builder --win",
     "dist:dir": "npm run build && electron-builder --win --dir",
     "dist:publish": "npm run build && electron-builder --win --publish always",
@@ -29,8 +32,11 @@
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@fontsource/pretendard": "^5.3.0",
+    "chrome-remote-interface": "^0.34.0",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.6.2",
+    "iconv-lite": "^0.7.3",
     "koffi": "^2.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -62,6 +68,12 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "build/neis-shared.v1.bin",
+        "to": "neis-shared.v1.bin"
+      }
+    ],
     "artifactName": "${productName}-Setup-${version}.${ext}",
     "win": {
       "icon": "build/icon.ico",
@@ -87,5 +99,8 @@
       "repo": "SchoolUtil",
       "releaseType": "release"
     }
+  },
+  "allowScripts": {
+    "electron@34.5.8": true
   }
 }

@@ -8,11 +8,9 @@ export function ClockWidget() {
     return () => clearInterval(id);
   }, []);
 
-  const time = now.toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const hours = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+
   const date = now.toLocaleDateString("ko-KR", {
     weekday: "long",
     year: "numeric",
@@ -21,9 +19,14 @@ export function ClockWidget() {
   });
 
   return (
-    <div style={{ textAlign: "center", padding: "12px 0" }}>
-      <div style={{ fontSize: "2rem", fontWeight: 700 }}>{time}</div>
-      <div className="muted">{date}</div>
+    <div className="clock-widget">
+      <div className="clock-time">
+        {hours}
+        <span className="clock-seconds" aria-hidden="true">
+          :{seconds}
+        </span>
+      </div>
+      <div className="clock-date">{date}</div>
     </div>
   );
 }

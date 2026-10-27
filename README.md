@@ -1,6 +1,13 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 0.4.0**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 0.5.0**
+
+## 다운로드 (설치)
+
+최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
+파일 이름 예: `SchoolUtil-Setup-0.4.0.exe`
+
+설치 후 **설정** 카드에서 «데이터 백업 · 업데이트 (설치 버전 …)»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
 
 ## Git
 
@@ -10,9 +17,43 @@ Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버
 
 ```bash
 git remote add origin https://github.com/wogud32215-dev/SchoolUtil.git
-# 최초 푸시 (브랜치 이름이 main이면 main으로 바꿉니다)
-git push -u origin master
+git push -u origin main
 ```
+
+## 개발 환경
+
+- **Node.js**: 20.x 또는 22.x LTS 권장 (24.x에서도 동작하도록 Windows 런처를 쓰지만, LTS가 안전합니다).
+- **실행 창**: `npm run dev`는 **Electron 앱 창**이 떠야 합니다. 브라우저에서 `http://localhost:5173`만 열면 저장·NEIS·날씨 IPC가 동작하지 않습니다.
+- **프로젝트 경로**: 폴더 이름에 **공백·한글**이 있어도 dev는 [`electron/launch-dev.ts`](electron/launch-dev.ts)가 단축 경로·cmd 배치로 Electron을 띄웁니다.
+
+### Electron 바이너리가 없을 때 (`spawn UNKNOWN` 등)
+
+`npm install` 직후 `node_modules/electron/dist/electron.exe`가 없으면 Vite는 뜨지만 Electron이 안 열립니다.
+
+1. 수동 설치:
+   ```bash
+   npm run electron:install
+   ```
+2. **npm 11**에서 install 스크립트가 막혀 있으면:
+   ```bash
+   npm install-scripts approve electron
+   npm rebuild electron
+   ```
+3. 확인:
+   ```powershell
+   node -e "console.log(require('electron'))"
+   Test-Path node_modules\electron\dist\electron.exe
+   ```
+   PowerShell에서 직접 실행할 때는 **경로를 한 줄에 넣지 말고** 변수에 담으세요 (한글 경로 깨짐 방지):
+   ```powershell
+   $exe = node -p "require('electron')"
+   Start-Process -FilePath $exe -ArgumentList '.','--no-sandbox' -WorkingDirectory (Get-Location)
+   ```
+   `Start-Process`가 **애플리케이션 제어 정책**으로 막히면 `Start-Process` 대신 `npm run dev` 또는 아래 unblock을 쓰세요.
+
+4. **경로에 공백·한글이 있는데 `spawn UNKNOWN`이면** — 최신 코드로 `npm run dev`를 다시 실행하세요.
+
+5. **보안 정책으로 `electron.exe` 차단** — 콘솔에 `blocked by your organization's Device Guard policy`가 보이면 **학교·기관 WDAC**입니다. `npm run electron:unblock`이나 경로 이동으로는 해결되지 않으며, IT에 개발 도구 예외를 요청하거나 **정책이 없는 개인 PC**에서 `npm run dev`를 실행해야 합니다. 개인 PC에서는 Smart App Control·백신 예외(`node_modules\electron\dist`)를 검토하세요. `npm run dist:dir`로 만든 `SchoolUtil.exe`도 **서명 없으면** 같은 정책에 막힐 수 있습니다.
 
 ## 개발 워크플로
 
@@ -67,41 +108,53 @@ npm run dist
 
 ## 배포 · GitHub Releases · 자동 업데이트
 
-`package.json`의 `build.publish`는 **GitHub Releases** (`provider: github`)로 설정되어 있습니다. 설치 파일을 빌드할 때 `app-update.yml`에 피드 URL이 들어가며, 설치판 앱의 **설정 → 데이터 백업 → 업데이트 확인**으로 새 버전을 받을 수 있습니다.
+### publish 설정 (현재)
 
-### 첫 배포 준비
+`package.json` → `build.publish`:
 
-1. `package.json`의 `repository`·`build.publish`는 **wogud32215-dev/SchoolUtil** 로 맞춰 두었습니다.
-2. `git remote`가 위 저장소를 가리키는지 확인한 뒤 `main` 또는 `master`에 푸시하면 `.github/workflows/ci.yml`이 타입 검사·빌드를 실행합니다.
+| 항목 | 값 |
+|------|-----|
+| provider | `github` |
+| owner / repo | `wogud32215-dev` / `SchoolUtil` |
+| releaseType | `release` |
 
-### 릴리스 올리기 (권장: 태그 + Actions)
+설치 파일을 **빌드할 때** exe 안에 `app-update.yml`이 들어가고, 앱은 GitHub Releases의 **`latest.yml`**(및 Setup exe)을 참조합니다. Releases에 올라가는 자산 예:
 
-1. `package.json`의 `version`을 올립니다 (예: `0.4.1`).
-2. 커밋 후 태그를 푸시합니다. **태그는 `v` + 버전**과 일치해야 합니다.
+- `SchoolUtil-Setup-<version>.exe`
+- `latest.yml` — `electron-updater`가 버전 비교에 사용
+
+### 새 버전 올리기 (유지보수자)
+
+1. `package.json`의 **`version`**만 올립니다 (README 상단 버전 문구도 맞춥니다).
+2. 변경을 커밋한 뒤 `main`에 푸시합니다.
+3. **태그 = `v` + version** (Release 워크플로가 `package.json`과 일치하는지 검사합니다).
 
 ```bash
 git tag v0.4.1
-git push origin main --tags
+git push origin main
+git push origin v0.4.1
 ```
 
-3. `.github/workflows/release.yml`이 Windows에서 설치 파일을 빌드하고 GitHub Releases에 `latest.yml`·Setup exe를 올립니다.
-4. 사용자는 Releases에서 Setup을 받거나, 이미 설치한 앱에서 **업데이트 확인**을 사용합니다.
+4. [Actions → Release](https://github.com/wogud32215-dev/SchoolUtil/actions)가 성공하면 [Releases](https://github.com/wogud32215-dev/SchoolUtil/releases)에 설치 파일이 생깁니다.
 
-### 로컬에서 Releases에 직접 올리기
+로컬에서만 올릴 때: [PAT](https://github.com/settings/tokens) (`repo`)를 `GH_TOKEN`으로 두고 `npm run dist:publish` (서명 없을 때 `CSC_IDENTITY_AUTO_DISCOVERY=false`).
 
-[GitHub personal access token](https://github.com/settings/tokens) (`repo` 권한)을 `GH_TOKEN`으로 설정한 뒤:
+### 설치 · 덮어쓰기 · 업데이트 확인 (검증 절차)
 
-```powershell
-$env:GH_TOKEN = "<token>"
-$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
-npm run dist:publish
-```
+| 단계 | 확인 내용 |
+|------|-----------|
+| **신규 설치** | Releases의 Setup exe 실행 → 설정에 «설치 버전 0.4.0» 표시 |
+| **덮어쓰기** | 같은 `appId`로 새 Setup을 다시 실행 → `%APPDATA%\SchoolUtil\schoolutil-data.json` 유지 |
+| **업데이트 없음** | 설치판에서 **업데이트 확인** → «현재 최신 버전입니다.» |
+| **업데이트 있음** | 더 높은 버전을 Releases에 올린 뒤 **업데이트 확인** → 다운로드·재시작 안내 |
 
-`git remote`와 `package.json`의 `repository`가 같은 저장소를 가리켜야 합니다.
+업데이트 경로를 테스트하려면: PC에 **0.4.0** 설치 → 저장소에서 **0.4.1** 릴리스 후 앱에서 업데이트 확인.
 
-### 자체 서버(generic URL)를 쓰는 경우
+개발 모드(`npm run dev`)에서는 업데이트 확인이 거부됩니다 (설치판만 해당).
 
-`build.publish`를 아래처럼 바꾸고, HTTPS에 `latest.yml`과 Setup exe를 함께 올립니다.
+### generic URL로 바꿀 때
+
+`build.publish`를 아래처럼 바꾸고, HTTPS 폴더에 **`latest.yml`과 Setup exe를 같은 경로**에 올립니다.
 
 ```json
 "publish": {
@@ -109,6 +162,8 @@ npm run dist:publish
   "url": "https://example.com/schoolutil-updates/"
 }
 ```
+
+변경 후 **반드시 다시 `dist`로 설치 파일을 빌드**해야 exe 안의 업데이트 주소가 바뀝니다.
 
 ## 아이콘 교체
 
@@ -135,6 +190,11 @@ npm run dist
 
 `appId`(`com.schoolutil.app`)와 store 이름(`schoolutil-data`)을 바꾸지 않으면 재설치 후에도 데이터가 유지됩니다.
 
+## 기능 (0.5.0)
+
+- **업무포털**: 나이스·에듀파인 — URL만 열기(기본) 또는 설정에서 «자동 로그인 시도»(Chrome/Edge CDP POC, 인증서 OS 입력은 실험·opt-in). `portal.log`·마지막 실행 결과·교육청 프리셋
+- **업무포털 자격 증명**: 아이디·비밀번호는 `safeStorage`·`schoolutil-secrets.json`에만 저장 (데이터·백업 JSON에는 없음)
+
 ## 기능 (0.4.0)
 
 - **학교 검색**: 설정에서 NEIS `schoolInfo` API로 학교 선택 → 교육청·학교 코드 자동 입력
@@ -144,7 +204,7 @@ npm run dist
 
 ## 기능 (0.3.0)
 
-- **위젯 10종**: 시계, 날씨, 급식, 달력, D-Day, 메모, 할 일, 시간표, 학사일정, 설정 — 설정에서 카드 켜기/끄기
+- **위젯 11종**: 시계, 날씨, 급식, 달력, D-Day, 메모, 할 일, 시간표, 학사일정, 업무포털, 설정 — 설정에서 카드 켜기/끄기
 - **반응형 배치**: 창 너비에 맞춰 그리드가 늘어납니다
 - **위젯 모드**: 설정에서 «위젯 (바탕화면에 얹기)» — 투명 배경, 카드 영역만 클릭, Win32로 바탕화면 아래 배치 시도
 - **앞으로 보기**: Ctrl+Alt+D (트레이 더블클릭) · **비상 탈출**: Ctrl+Alt+Shift+D
@@ -161,3 +221,55 @@ npm run dist
 ## SmartScreen
 
 서명되지 않은 설치 파일은 Windows SmartScreen 경고가 뜰 수 있습니다. **추가 정보 → 실행**으로 설치할 수 있습니다.
+
+## 배포 전 확인
+
+릴리스 태그·Setup exe를 올리기 전에, **설치판**(`npm run dist` → `release/win-unpacked` 또는 Setup exe)으로 아래를 순서대로 점검합니다. 개발 모드(`npm run dev`)만으로는 저장·암호화·자동 업데이트가 완전히 같지 않습니다.
+
+### 빌드
+
+| 항목 | 확인 |
+|------|------|
+| 타입·빌드 | `npm run typecheck` → `npm run build` (또는 `npm run dist:dir`) 성공 |
+| 버전 | `package.json` `version` = README 상단 = 태그 `v…` 예정 버전 |
+| 잠금 | SchoolUtil·dev Electron 종료 후 패키징 (`release` EBUSY 방지) |
+
+### 데이터·호환
+
+| 항목 | 확인 |
+|------|------|
+| 신규 설치 | 할 일·설정 저장 후 `%APPDATA%\SchoolUtil\schoolutil-data.json` 생성 |
+| 덮어쓰기 설치 | 기존 `schoolutil-data.json`·위젯 배치 유지 |
+| 구버전 JSON | `memos`/`ddays` 없는 예전 `schoolutil-data.json` 또는 백업 JSON을 **설정 → 불러오기**로 복원 (필드 없으면 빈 배열·기본 시간표로 채움) |
+| 레거시 경로 | `%APPDATA%\schoolutil\` 에만 데이터 있을 때 첫 실행 시 `SchoolUtil`로 복사 |
+| 자동 백업 | 저장 후 `schoolutil-data.backup.json`, `schoolutil-data.day-YYYY-MM-DD.json` 생성 |
+
+### NEIS · 급식 · 날씨
+
+| 항목 | 확인 |
+|------|------|
+| API 키 | 설정에 키 저장 → 디스크 JSON의 `neisApiKey`는 비어 있고 `schoolutil-secrets.json`에 암호화 |
+| 업무포털 비밀번호 | `schoolutil-secrets.json`만 (백업 JSON·`schoolutil-data.json`에 없음) |
+| 키 삭제 | API 키 칸 비우고 저장 → 급식·학사일정이 «키 없음» 안내로 동작 |
+| 평문 이전 | 예전 JSON에 평문 `neisApiKey`만 있을 때 첫 실행 후 secrets로 이전·JSON에서 제거 |
+| 학교 검색 | 설정에서 학교 검색 → 교육청·학교 코드·학교명 반영 |
+| 학사일정 | 코드·키 입력 후 이번 달 일정 로드 (키 오류 시 NEIS 메시지) |
+| 급식 | 오늘 급식 표시 또는 휴일·데이터 없음 안내 |
+| 날씨 | 기본(서울) 또는 설정 좌표로 온도·코드 표시 |
+
+### 백업 · 가져오기
+
+| 항목 | 확인 |
+|------|------|
+| 보내기 | JSON에 `state` 래퍼·버전 필드 포함, 할 일·설정 포함 |
+| 불러오기 | 확인 후 덮어쓰기·화면 reload, 직전 상태는 자동 백업에 남음 |
+| 키 포함 백업 | 보낸 JSON에 API 키가 있을 수 있음 — 파일 보관 주의 |
+
+### 앱 동작 · 업데이트
+
+| 항목 | 확인 |
+|------|------|
+| 트레이 | 창 닫기 → 트레이 유지, 트레이 «종료»로만 완전 종료 |
+| 위젯 모드 | 바탕화면 모드·Ctrl+Alt+D·비상 Ctrl+Alt+Shift+D |
+| 업데이트 확인 | 설치판에서 «현재 최신» 또는 새 버전 다운로드 안내 (dev에서는 거부) |
+| SmartScreen | 미서명 exe 시 «추가 정보 → 실행» 안내 유지 |

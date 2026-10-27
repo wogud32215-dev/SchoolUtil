@@ -1,19 +1,50 @@
+import { copyFileSync } from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import electron from "vite-plugin-electron/simple";
+import { launchElectronDev } from "./electron/launch-dev";
+
+function copyPortalUiaScripts(): Plugin {
+  const pairs = [
+    ["electron/portal-cert-uia.ps1", "dist-electron/portal-cert-uia.ps1"],
+    ["electron/portal-edufine-uia.ps1", "dist-electron/portal-edufine-uia.ps1"],
+  ];
+  return {
+    name: "copy-portal-uia-scripts",
+    writeBundle(options) {
+      if (!options.dir?.replace(/\\/g, "/").endsWith("dist-electron")) return;
+      for (const [relSrc, relDest] of pairs) {
+        try {
+          copyFileSync(path.join(__dirname, relSrc), path.join(__dirname, relDest));
+        } catch {
+          /* dev 첫 빌드 전 등 */
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    copyPortalUiaScripts(),
     electron({
       main: {
         entry: "electron/bootstrap.ts",
+        onstart() {
+          launchElectronDev();
+        },
         vite: {
           build: {
             outDir: "dist-electron",
             rollupOptions: {
-              external: ["electron-store", "koffi", "electron-updater"],
+              external: [
+                "electron-store",
+                "koffi",
+                "electron-updater",
+                "chrome-remote-interface",
+              ],
             },
           },
         },

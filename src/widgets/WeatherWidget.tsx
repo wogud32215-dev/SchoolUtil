@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  WidgetFetchError,
+  WidgetLoading,
+} from "@/components/WidgetFetchState";
 import type { AppSettings } from "@/types/state";
 
 const WMO: Record<number, string> = {
@@ -73,15 +77,12 @@ export function WeatherWidget({ settings }: Props) {
     void load();
   }, [load, settings.weatherLat, settings.weatherLon]);
 
-  if (data.loading) return <p className="muted">불러오는 중…</p>;
+  if (data.loading) {
+    return <WidgetLoading label="날씨 불러오는 중…" />;
+  }
   if (data.error) {
     return (
-      <div>
-        <p className="muted">{data.error}</p>
-        <button type="button" className="btn-primary" onClick={() => void load()}>
-          다시 불러오기
-        </button>
-      </div>
+      <WidgetFetchError message={data.error} onRetry={() => void load()} />
     );
   }
 
@@ -89,14 +90,14 @@ export function WeatherWidget({ settings }: Props) {
     data.code != null ? (WMO[data.code] ?? `코드 ${data.code}`) : "—";
 
   return (
-    <div>
-      <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>
+    <div className="weather-widget">
+      <div className="weather-temp">
         {data.temp != null ? `${data.temp}°C` : "—"}
       </div>
-      <div>{settings.weatherLabel}</div>
-      <div className="muted">{desc}</div>
+      <div className="weather-place">{settings.weatherLabel || "지역"}</div>
+      <div className="weather-desc">{desc}</div>
       {data.wind != null && (
-        <div className="muted">풍속 {data.wind} km/h</div>
+        <div className="weather-meta">풍속 {data.wind} km/h</div>
       )}
     </div>
   );

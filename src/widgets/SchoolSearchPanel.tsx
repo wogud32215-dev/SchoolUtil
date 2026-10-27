@@ -48,7 +48,7 @@ export function SchoolSearchPanel({ draft, onApply }: Props) {
   return (
     <div className="school-search">
       <p className="muted" style={{ margin: "0 0 8px" }}>
-        학교 이름으로 검색하면 교육청·학교 코드가 채워집니다.
+        학교 이름만 검색해 선택하면 급식·학사일정에 쓰는 코드가 채워집니다.
       </p>
       <div className="input-row">
         <input

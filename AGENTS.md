@@ -13,9 +13,10 @@
 ### 로드맵 (진행 순서)
 
 1. 기반 정리: Git, 버전, 빌드 정리, 아이콘 (완료)
-2. 위젯 모드: 투명 창, `setShape`, Win32 `HWND_BOTTOM`, 앞으로 보기·비상 단축키 (완료, Win+D·WorkerW 미구현)
+2. 위젯 모드: 투명 창, `setShape`, Win32 `HWND_BOTTOM`, 앞으로 보기·비상 단축키 (Win+D·해상도 동기화 1차, WorkerW 부모 창은 미구현)
 3. 위젯 연결·반응형 레이아웃·카드 켜기/끄기 (완료)
 4. 학교 검색 온보딩, 데이터 백업, API 키 암호화, IPC 검증, 자동 업데이트 (완료 — `build.publish` GitHub Releases, `.github/workflows/release.yml`)
+5. 업무포털: URL 열기·브라우저 선택·자격 증명 safeStorage (완료 — 기본 `url_only`; CDP·OS 인증 입력은 설정 «고급» opt-in POC)
 
 로드맵 밖의 큰 기능을 임의로 시작하지 않는다. 필요하면 먼저 사용자에게 확인한다.
 
@@ -30,6 +31,12 @@ electron/            Electron 메인 프로세스 (Node 권한)
   neis.ts            NEIS 학사일정 API 호출
   settings-normalize.ts  settings 병합·기본값
   win32-zorder.ts    바탕화면 아래 배치 (Windows)
+  win32-desktop.ts   Progman/WorkerW 전경 감지 (Win+D 근사)
+  widget-window.ts   위젯 창 주 모니터 workArea 맞춤
+  portal-launch.ts   업무포털 URL을 기본/Chrome/Edge/Whale로 열기
+  portal-automation.ts  CDP 자동 로그인(POC)·portal.log
+  portal-cert-ui.ts  인증서 비밀번호 OS 입력(실험·opt-in)
+  secrets.ts         NEIS 키·업무포털 자격 증명 safeStorage (`schoolutil-secrets.json`, 백업·로그에 미포함)
 src/                 렌더러 (React, 브라우저 권한)
   App.tsx            대시보드 + react-grid-layout
   hooks/usePersistedState.ts   상태 로드/저장 훅
@@ -69,7 +76,7 @@ public/icon.png      트레이/앱 내 아이콘
 
 ### 3.3 IPC 계약
 
-- IPC 채널 이름(`store:get`, `store:patch`, `store:path`, `app:minimize`, `app:hide`, `shell:openExternal`, `neis:schedule`)은 **기존 이름과 반환 형태를 유지**한다. 추가는 가능, 삭제·변경은 승인 필요.
+- IPC 채널 이름(`store:get`, `store:patch`, `store:path`, `app:minimize`, `app:hide`, `shell:openExternal`, `neis:schedule`, `portal:launch` 등)은 **기존 이름과 반환 형태를 유지**한다. 추가는 가능, 삭제·변경은 승인 필요.
 - 새 IPC를 추가할 때는 아래 세 곳을 **한 번에** 수정한다.
   1. `electron/main.ts` (`ipcMain.handle`)
   2. `electron/preload.ts` (`api` 객체)
@@ -164,9 +171,9 @@ npm run build
 ## 7. 알려진 제약과 주의 지점
 
 - `GridLayout` 너비는 `useDashboardWidth`로 대시보드 영역에 맞춘다.
-- `displayMode`가 `widget`이면 창이 투명·전체 화면이며 `setShape`로 카드만 클릭된다. `window`면 기존 불투명 전체 창. 모드 전환 시 창을 재생성한다.
-- Win+D 동기화·WorkerW 부모 창 방식은 미구현. Z-order 실패 시 화면 상단 배너로 안내한다.
-- 위젯 id·기본 레이아웃은 `src/widgets/registry.ts`에 등록한다. 새 위젯 추가 시 registry, `App.tsx` `renderWidgetBody`, 설정 토글 목록을 함께 수정한다.
+- `displayMode`가 `widget`이면 창이 투명·주 모니터 workArea이며 `setIgnoreMouseEvents(forward)`로 빈 영역 클릭이 통과한다 (Windows `setShape`는 그리기까지 잘라 사용 안 함). `window`면 기존 불투명 전체 창. 모드 전환 시 창을 재생성한다.
+- Win+D·바탕화면 전환: `isDesktopForeground` 폴링·blur 시 Z-order·`setShape` 재동기화 (완전 동기는 아님). WorkerW 부모 창 방식은 미구현. Z-order 실패 시 화면 상단 배너로 안내한다.
+- 위젯 id·기본 레이아웃은 `src/widgets/registry.ts`에 등록한다. 새 위젯 추가 시 registry, `App.tsx` `renderWidgetBody`, 설정 토글 목록을 함께 수정한다. **설정 UI는 그리드 카드가 아니라 하단 도크(톱니바퀴)·제목줄 버튼 → `SettingsModal`**.
 - 급식·날씨 API는 메인 IPC(`neis:meal`, `weather:current`)로 호출한다.
 - NEIS API 키는 현재 평문 JSON에 저장된다. 개선(암호화) 시 기존 평문 값을 읽어 이전하는 경로를 반드시 둔다.
 - `store:patch`는 입력 검증이 없다. 스키마 검증을 추가할 때 **기존 정상 데이터를 거부하지 않도록** 느슨한 기준부터 적용한다.

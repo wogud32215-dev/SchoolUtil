@@ -1,0 +1,74 @@
+:root {
+  --type-body: 450;
+  --type-emphasis: 550;
+  --type-heading: 650;
+  --type-strong: 750;
+  --radius-card: 22px;
+  --radius-control: 12px;
+  --shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-dock: 0 12px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.08);
+  --dashboard-padding: 16px;
+  --grid-gap: 14px;
+  --header-height: 44px;
+  --font-sans: "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
+  --card-stroke: rgba(255, 255, 255, 0.65);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[data-density="cozy"] {
+  --dashboard-padding: 20px;
+  --grid-gap: 16px;
+}
+
+[data-density="normal"] {
+  --dashboard-padding: 14px;
+  --grid-gap: 12px;
+}
+
+[data-density="compact"] {
+  --dashboard-padding: 10px;
+  --grid-gap: 8px;
+}
+
+[data-font="system"] {
+  --font-sans: "Segoe UI", "Malgun Gothic", sans-serif;
+}
+
+[data-font="pretendard"] {
+  --font-sans: "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
+}
+
+[data-font-weight="light"] {
+  --type-body: 350;
+  --type-emphasis: 450;
+  --type-heading: 500;
+  --type-strong: 600;
+}
+
+[data-font-weight="normal"] {
+  --type-body: 400;
+  --type-emphasis: 500;
+  --type-heading: 600;
+  --type-strong: 700;
+}
+
+[data-font-weight="medium"] {
+  --type-body: 450;
+  --type-emphasis: 550;
+  --type-heading: 650;
+  --type-strong: 750;
+}
+
+[data-font-weight="strong"] {
+  --type-body: 500;
+  --type-emphasis: 600;
+  --type-heading: 700;
+  --type-strong: 800;
+}
+
+[data-font-weight="heavy"] {
+  --type-body: 550;
+  --type-emphasis: 650;
+  --type-heading: 750;
+  --type-strong: 800;
+}
