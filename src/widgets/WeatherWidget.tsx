@@ -1,23 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { WeatherDetailModal } from "@/components/WeatherDetailModal";
 import {
   WidgetFetchError,
   WidgetLoading,
 } from "@/components/WidgetFetchState";
 import type { AppSettings } from "@/types/state";
-
-const WMO: Record<number, string> = {
-  0: "맑음",
-  1: "대체로 맑음",
-  2: "구름 조금",
-  3: "흐림",
-  45: "안개",
-  48: "안개",
-  51: "이슬비",
-  61: "비",
-  71: "눈",
-  80: "소나기",
-  95: "뇌우",
-};
+import { wmoLabel } from "@/utils/weatherWmo";
 
 type WeatherState = {
   loading: boolean;
@@ -32,6 +20,7 @@ type Props = {
 };
 
 export function WeatherWidget({ settings }: Props) {
+  const [detailOpen, setDetailOpen] = useState(false);
   const [data, setData] = useState<WeatherState>({
     loading: true,
     error: null,
@@ -86,19 +75,30 @@ export function WeatherWidget({ settings }: Props) {
     );
   }
 
-  const desc =
-    data.code != null ? (WMO[data.code] ?? `코드 ${data.code}`) : "—";
+  const desc = wmoLabel(data.code);
 
   return (
-    <div className="weather-widget">
-      <div className="weather-temp">
-        {data.temp != null ? `${data.temp}°C` : "—"}
-      </div>
-      <div className="weather-place">{settings.weatherLabel || "지역"}</div>
-      <div className="weather-desc">{desc}</div>
-      {data.wind != null && (
-        <div className="weather-meta">풍속 {data.wind} km/h</div>
-      )}
-    </div>
+    <>
+      <button
+        type="button"
+        className="weather-widget weather-widget--clickable"
+        onClick={() => setDetailOpen(true)}
+        aria-label="날씨 상세 보기"
+      >
+        <div className="weather-temp">
+          {data.temp != null ? `${data.temp}°C` : "—"}
+        </div>
+        <div className="weather-place">{settings.weatherLabel || "지역"}</div>
+        <div className="weather-desc">{desc}</div>
+        {data.wind != null && (
+          <div className="weather-meta">풍속 {data.wind} km/h</div>
+        )}
+      </button>
+      <WeatherDetailModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        placeLabel={settings.weatherLabel}
+      />
+    </>
   );
 }

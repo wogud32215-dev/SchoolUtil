@@ -97,12 +97,12 @@ declare global {
       fetchWeather: () => Promise<
         | {
             ok: true;
-            data: {
-              temp: number | null;
-              code: number | null;
-              wind: number | null;
-            };
+            data: import("@/types/weather").WeatherSnapshot;
           }
+        | { ok: false; error: string }
+      >;
+      fetchWeatherForecast: () => Promise<
+        | { ok: true; data: import("@/types/weather").WeatherForecastData }
         | { ok: false; error: string }
       >;
       searchNeisSchools: (

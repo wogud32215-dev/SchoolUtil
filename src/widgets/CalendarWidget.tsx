@@ -139,10 +139,6 @@ export function CalendarWidget({
 
   function chipsForDay(ymd: string): { shown: DayChip[]; more: number } {
     const chips: DayChip[] = [];
-    const neis = neisByDay.get(ymd) ?? [];
-    for (const name of neis) {
-      chips.push({ key: `n-${name}`, label: name, kind: "neis" });
-    }
     for (const t of todosByDay.get(ymd) ?? []) {
       chips.push({
         key: t.id,
@@ -151,6 +147,10 @@ export function CalendarWidget({
         done: t.done,
         category: t.category,
       });
+    }
+    const neis = neisByDay.get(ymd) ?? [];
+    for (const name of neis) {
+      chips.push({ key: `n-${name}`, label: name, kind: "neis" });
     }
     const shown = chips.slice(0, MAX_CHIPS);
     return { shown, more: chips.length - shown.length };

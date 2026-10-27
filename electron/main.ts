@@ -29,7 +29,7 @@ import {
   withNeisApiKeyFallback,
   writeAppNeisKeyForAdmin,
 } from "./neis-key-resolve";
-import { fetchCurrentWeather } from "./open-meteo";
+import { fetchCurrentWeather, fetchWeatherForecast } from "./open-meteo";
 import { normalizeSettings } from "./settings-normalize";
 import {
   getState,
@@ -107,7 +107,11 @@ function resolvePreloadPath(): string {
 }
 
 function getTrayIcon() {
-  const iconPath = path.join(process.env.VITE_PUBLIC!, "icon.png");
+  const publicDir = process.env.VITE_PUBLIC!;
+  const trayPath = path.join(publicDir, "tray-icon.png");
+  const iconPath = fs.existsSync(trayPath)
+    ? trayPath
+    : path.join(publicDir, "icon.png");
   const image = nativeImage.createFromPath(iconPath);
   if (image.isEmpty()) {
     return nativeImage.createEmpty();
@@ -1001,6 +1005,19 @@ function registerIpc() {
     try {
       const { weatherLat, weatherLon } = getState().settings;
       return await fetchCurrentWeather(weatherLat, weatherLon);
+    } catch (e) {
+      return {
+        ok: false as const,
+        error:
+          e instanceof Error ? e.message : "날씨 처리 중 오류가 발생했습니다.",
+      };
+    }
+  });
+
+  ipcMain.handle("weather:forecast", async () => {
+    try {
+      const { weatherLat, weatherLon } = getState().settings;
+      return await fetchWeatherForecast(weatherLat, weatherLon);
     } catch (e) {
       return {
         ok: false as const,

@@ -170,8 +170,10 @@ git push origin v0.4.1
 | 파일 | 용도 |
 |------|------|
 | `build/icon.png` | 원본(256×256). 수정 후 `npm run icons` |
+| `build/icon-source.png` | 있으면 이 PNG를 256으로 리사이즈해 아이콘 생성 (임시·교체용) |
 | `build/icon.ico` | Windows 설치·exe (스크립트가 PNG에서 생성) |
-| `public/icon.png` | 트레이·앱 내 (`npm run icons`가 동기화) |
+| `public/icon.png` | 창·앱 내 (`npm run icons`가 동기화) |
+| `public/tray-icon.png` | 트레이 16px용 단순 아이콘 (`npm run icons`가 생성) |
 
 ```bash
 npm run icons

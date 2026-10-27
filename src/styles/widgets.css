@@ -138,9 +138,9 @@
 }
 
 .cal-day-list--neis {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, var(--text-muted) 25%);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, var(--text-muted) 25%);
 }
 
 .todo-item {
@@ -1194,11 +1194,28 @@
 }
 
 .cal-chip--neis {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: transparent;
+  padding: 0 2px;
+  border-radius: 0;
+  color: color-mix(in srgb, var(--text) 88%, var(--text-muted));
+  font-size: clamp(0.62rem, 1.55vw, 0.72rem);
+  font-weight: var(--type-emphasis);
+  line-height: 1.3;
+}
+
+.cal-chip--neis::before {
+  content: "·";
+  margin-right: 3px;
+  font-weight: var(--type-heading);
+  color: color-mix(in srgb, var(--text) 70%, var(--text-muted));
 }
 
 .cal-chip--event {
   background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.cal-chip--todo {
+  font-weight: var(--type-heading);
 }
 
 .cal-chip--todo:not([data-cat]) {
@@ -1641,8 +1658,36 @@
   flex-shrink: 0;
 }
 
+.cal-day-row--neis {
+  display: block;
+  padding: 3px 0;
+  border: none;
+  background: transparent;
+  font-size: 0.84rem;
+  color: color-mix(in srgb, var(--text) 88%, var(--text-muted));
+  line-height: 1.35;
+}
+
+.cal-day-row--neis .cal-day-row-title {
+  font-weight: var(--type-emphasis);
+}
+
+.cal-day-row--neis .cal-day-row-title::before {
+  content: "·\00a0";
+  font-weight: var(--type-heading);
+  color: color-mix(in srgb, var(--text) 70%, var(--text-muted));
+}
+
+.cal-day-row--neis .cal-day-row-sub {
+  margin-top: 2px;
+  padding-left: 0;
+}
+
 .cal-day-kind--neis {
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: transparent;
+  padding: 0;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .cal-day-kind--event {
@@ -1947,6 +1992,213 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+.weather-widget--clickable {
+  width: 100%;
+  margin: 0;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.weather-widget--clickable:hover {
+  background: color-mix(in srgb, var(--accent, #2563eb) 8%, transparent);
+}
+
+.weather-widget--clickable:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
+
+.weather-detail-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  animation: cal-day-fade-in 0.2s ease;
+}
+
+.weather-detail-modal {
+  width: min(440px, 100%);
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card, var(--panel-bg, #fff));
+  border-radius: 20px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.22),
+    0 0 0 1px color-mix(in srgb, var(--border, #ccc) 65%, transparent);
+  overflow: hidden;
+  animation: cal-day-slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-app-region: no-drag;
+}
+
+.weather-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #ccc) 55%, transparent);
+}
+
+.weather-detail-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: var(--type-heading);
+}
+
+.weather-detail-current {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.weather-detail-current-temp {
+  font-size: 1.35rem;
+  font-weight: var(--type-heading);
+  color: var(--accent);
+}
+
+.weather-detail-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--border, #ccc) 35%, transparent);
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.weather-detail-close:hover {
+  background: color-mix(in srgb, var(--border, #ccc) 55%, transparent);
+}
+
+.weather-detail-body {
+  padding: 12px 18px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.weather-detail-section {
+  margin-bottom: 18px;
+}
+
+.weather-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.weather-detail-section-title {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: var(--type-heading);
+  color: var(--text-muted);
+  text-transform: none;
+}
+
+.weather-detail-muted {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.weather-hourly-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 4px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.weather-hourly-card {
+  flex: 0 0 auto;
+  min-width: 72px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--border, #ccc) 22%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+}
+
+.weather-hourly-time {
+  font-weight: var(--type-heading);
+  color: var(--text-muted);
+}
+
+.weather-hourly-temp {
+  font-size: 0.95rem;
+  font-weight: var(--type-heading);
+}
+
+.weather-hourly-desc {
+  text-align: center;
+  line-height: 1.25;
+  color: var(--text-muted);
+}
+
+.weather-hourly-precip {
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.weather-daily-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weather-daily-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--border, #ccc) 18%, transparent);
+  font-size: 0.85rem;
+}
+
+.weather-daily-date {
+  font-weight: var(--type-heading);
+}
+
+.weather-daily-desc {
+  color: var(--text-muted);
+}
+
+.weather-daily-temps {
+  font-weight: var(--type-heading);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* —— 급식 (작은 카드용 컴팩트) —— */

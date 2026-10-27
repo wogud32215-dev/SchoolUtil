@@ -42,6 +42,7 @@ const api = {
   fetchNeisMeal: (range?: { fromYmd?: string; toYmd?: string }) =>
     ipcRenderer.invoke("neis:meal", range ?? {}),
   fetchWeather: () => ipcRenderer.invoke("weather:current"),
+  fetchWeatherForecast: () => ipcRenderer.invoke("weather:forecast"),
   searchComciganSchools: (query: string) =>
     ipcRenderer.invoke("comcigan:search-schools", { query }) as Promise<
       | {

@@ -270,19 +270,6 @@ export function CalendarDayModal({
                   <span className="muted">아래에서 추가해 보세요</span>
                 </div>
               )}
-              {dayNeis.length > 0 && (
-                <ul className="cal-day-list cal-day-list--neis">
-                  {dayNeis.map((it) => (
-                    <li key={`n-${it.ymd}-${it.name}`} className="cal-day-row cal-day-row--readonly">
-                      <span className="cal-day-kind cal-day-kind--neis">학사</span>
-                      <span className="cal-day-row-title">{it.name}</span>
-                      {it.content && (
-                        <span className="muted cal-day-row-sub">{it.content}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
               {dayTodos.length > 0 && (
                 <ul className="cal-day-list">
                   {dayTodos.map((t) => {
@@ -325,6 +312,21 @@ export function CalendarDayModal({
                       </li>
                     );
                   })}
+                </ul>
+              )}
+              {dayNeis.length > 0 && (
+                <ul className="cal-day-list cal-day-list--neis" aria-label="학사일정">
+                  {dayNeis.map((it) => (
+                    <li
+                      key={`n-${it.ymd}-${it.name}`}
+                      className="cal-day-row cal-day-row--neis"
+                    >
+                      <span className="cal-day-row-title">{it.name}</span>
+                      {it.content && (
+                        <span className="muted cal-day-row-sub">{it.content}</span>
+                      )}
+                    </li>
+                  ))}
                 </ul>
               )}
             </section>

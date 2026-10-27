@@ -9,20 +9,7 @@ import {
   sectionEnabled,
   todayGlanceGreeting,
 } from "@/utils/todayGlance";
-
-const WMO: Record<number, string> = {
-  0: "맑음",
-  1: "대체로 맑음",
-  2: "구름 조금",
-  3: "흐림",
-  45: "안개",
-  48: "안개",
-  51: "이슬비",
-  61: "비",
-  71: "눈",
-  80: "소나기",
-  95: "뇌우",
-};
+import { wmoLabel } from "@/utils/weatherWmo";
 
 type Props = {
   open: boolean;
@@ -104,7 +91,7 @@ export function TodayGlanceModal({
       }
       const label = settings.weatherLabel || "날씨";
       const code = res.data.code;
-      const desc = code !== null ? WMO[code] ?? "—" : "—";
+      const desc = wmoLabel(code);
       setExtras((e) => ({
         ...e,
         weatherLoading: false,
