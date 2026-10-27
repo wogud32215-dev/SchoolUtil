@@ -1,4 +1,5 @@
 import type { TimetableData } from "@/types/state";
+import { formatClassCodeDisplay } from "@/utils/jeilClassLabels";
 import { listSubstituteEntries } from "@/utils/timetableSubstitute";
 
 type Props = {
@@ -42,12 +43,7 @@ export function ComciganSubstituteModal({ open, timetable, onClose }: Props) {
                 <li key={`${e.dateYmd}-${e.period}-${e.classCode}-${e.subject}`}>
                   <p className="comcigan-substitute-when">{e.whenLabel}</p>
                   {e.gradeClassLabel ? (
-                    <p className="comcigan-substitute-class">
-                      {e.gradeClassLabel}
-                      <span className="comcigan-substitute-class-code">
-                        ({e.classCode})
-                      </span>
-                    </p>
+                    <p className="comcigan-substitute-class">{e.gradeClassLabel}</p>
                   ) : null}
                   <div className="comcigan-substitute-diff">
                     <div className="comcigan-substitute-diff-row">
@@ -59,7 +55,9 @@ export function ComciganSubstituteModal({ open, timetable, onClose }: Props) {
                     <div className="comcigan-substitute-diff-row">
                       <span className="comcigan-substitute-diff-label">변경</span>
                       <span className="comcigan-substitute-diff-value comcigan-substitute-diff-value--now">
-                        {e.classCode ? `${e.classCode}${e.subject}` : e.subject}
+                        {e.classCode
+                          ? `${formatClassCodeDisplay(e.classCode)} ${e.subject}`.trim()
+                          : e.subject}
                         <span className="comcigan-substitute-inline-badge">교체</span>
                       </span>
                     </div>

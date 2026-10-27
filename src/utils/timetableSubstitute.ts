@@ -3,6 +3,10 @@ import {
   classCodeToGradeClass,
   formatSubstituteWhen,
 } from "@/utils/comciganTimetable";
+import {
+  formatClassCodeDisplay,
+  formatTimetableCellText,
+} from "@/utils/jeilClassLabels";
 import { normalizeTimetable } from "@/utils/timetable";
 
 export const TIMETABLE_DAY_LABELS = ["월", "화", "수", "목", "금"];
@@ -46,7 +50,9 @@ function changeToEntry(c: TimetableSubstituteChange): TimetableSubstituteEntry {
     gradeClassLabel: classCodeToGradeClass(c.classCode),
     subject: c.subject,
     originalSubject: c.originalSubject,
-    text: `${c.classCode}${c.subject}`,
+    text: c.classCode
+      ? `${formatClassCodeDisplay(c.classCode)} ${c.subject}`.trim()
+      : c.subject,
   };
 }
 
@@ -81,6 +87,8 @@ export function listSubstituteEntries(
       const legacy = legacyParseCell(text);
       const dateYmd = norm.comciganView?.weekDates[d] ?? "";
       const periodTime = norm.comciganView?.periodTimes[p] ?? "";
+      const displayText = formatTimetableCellText(text);
+      const subjectRaw = legacy.subject ?? text;
       out.push({
         dayIndex: d,
         dayLabel: TIMETABLE_DAY_LABELS[d] ?? "",
@@ -90,9 +98,9 @@ export function listSubstituteEntries(
         whenLabel: formatSubstituteWhen(dateYmd, d, p + 1, periodTime),
         classCode: "",
         gradeClassLabel: "",
-        subject: legacy.subject ?? text,
+        subject: formatTimetableCellText(subjectRaw),
         originalSubject: legacy.originalSubject ?? "—",
-        text,
+        text: displayText,
       });
     }
   }

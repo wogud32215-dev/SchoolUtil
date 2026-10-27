@@ -5,6 +5,7 @@ import {
   cellHasVacated,
   dayOfMonthFromYmd,
 } from "@/utils/comciganTimetable";
+import { formatLessonForDisplay } from "@/utils/jeilClassLabels";
 import { canEditManualSlot } from "@/utils/timetableManual";
 import { TIMETABLE_DAY_LABELS } from "@/utils/timetableSubstitute";
 
@@ -128,8 +129,10 @@ export function ComciganTimetableGrid({
                                 </span>
                               ) : null}
                               <span className="tt-comcigan-chip-main">
-                                {chip.classCode}
-                                {chip.subject}
+                                {formatLessonForDisplay(
+                                  chip.classCode,
+                                  chip.subject,
+                                )}
                               </span>
                               {chip.changed && chip.originalSubject ? (
                                 <span className="tt-comcigan-chip-orig">

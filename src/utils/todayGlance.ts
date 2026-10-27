@@ -7,6 +7,10 @@ import type {
   TodoItem,
 } from "@/types/state";
 import { ymdForLocalDate } from "@/utils/dueLabel";
+import {
+  formatLessonForDisplay,
+  formatTimetableCellText,
+} from "@/utils/jeilClassLabels";
 import { buildTimetableForDisplay } from "@/utils/timetableManual";
 import { normalizeTimetable } from "@/utils/timetable";
 
@@ -152,8 +156,21 @@ export function buildTodayGlanceSyncContent(
   const classes: string[] = [];
   if (dayCol !== null) {
     for (let p = 0; p < tt.periodCount && classes.length < 6; p++) {
-      const subject = (tt.grid[dayCol]?.[p] ?? "").trim();
-      if (subject) classes.push(`${p + 1}교시 ${subject}`);
+      const chips =
+        tt.comciganView?.chips[dayCol]?.[p]?.filter((c) => !c.vacated) ?? [];
+      if (chips.length > 0) {
+        const lessons = chips
+          .map((c) => formatLessonForDisplay(c.classCode, c.subject))
+          .filter((line) => line.length > 0);
+        if (lessons.length > 0) {
+          classes.push(`${p + 1}교시 ${lessons.join(" · ")}`);
+        }
+        continue;
+      }
+      const raw = (tt.grid[dayCol]?.[p] ?? "").trim();
+      if (raw) {
+        classes.push(`${p + 1}교시 ${formatTimetableCellText(raw)}`);
+      }
     }
   }
 

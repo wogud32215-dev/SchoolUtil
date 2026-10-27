@@ -3,6 +3,7 @@ import { ComciganTimetableGrid } from "@/components/ComciganTimetableGrid";
 import { TimetableManualCellEditor } from "@/components/TimetableManualCellEditor";
 import type { TimetableData, TimetableManualScope } from "@/types/state";
 import { hasComciganView } from "@/utils/comciganTimetable";
+import { formatTimetableCellText } from "@/utils/jeilClassLabels";
 import { emptyGrid, normalizeTimetable } from "@/utils/timetable";
 import {
   buildTimetableForDisplay,
@@ -130,7 +131,9 @@ export function TimetableWidget({ data, onChange, autoSync }: Props) {
   const todaySummary = (() => {
     if (todayIdx > 4) return "주말";
     const line = tt.grid[todayIdx]
-      .map((s, i) => (s.trim() ? `${i + 1} ${s.trim()}` : null))
+      .map((s, i) =>
+        s.trim() ? `${i + 1} ${formatTimetableCellText(s.trim())}` : null,
+      )
       .filter(Boolean)
       .join(" · ");
     return line || "입력된 수업 없음";

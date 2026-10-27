@@ -157,10 +157,23 @@ export function TodayGlanceModal({
         aria-labelledby="today-glance-title"
       >
         <header className="today-glance-header">
-          <p className="today-glance-brand" id="today-glance-title">제일 메이트</p>
-          <p className="today-glance-greeting">
-            {todayGlanceGreeting()}
-          </p>
+          <div className="today-glance-brand-row">
+            <img
+              className="today-glance-brand-mark"
+              src="/icon.png"
+              alt=""
+              width={40}
+              height={40}
+              decoding="async"
+            />
+            <div className="today-glance-brand-badge">
+              <p className="today-glance-brand" id="today-glance-title">
+                제일 메이트
+              </p>
+              <span className="today-glance-brand-sub">오늘 한눈에</span>
+            </div>
+          </div>
+          <p className="today-glance-greeting">{todayGlanceGreeting()}</p>
           <p className="today-glance-date">{formatTodayGlanceDate()}</p>
         </header>
 
