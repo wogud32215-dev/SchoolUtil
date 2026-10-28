@@ -153,6 +153,7 @@ export type AccentCard = "none" | "clock" | "weather";
 export type BackgroundFill = "transparent" | "panel" | "full";
 
 export type LayoutPreset =
+  | "recommended"
   | "bento"
   | "classic"
   | "calendar"
@@ -250,6 +251,8 @@ export type AppSettings = {
   comciganSchoolCode: string;
   comciganSchoolName: string;
   comciganTeacherName: string;
+  /** 컴시간 교사 배열 인덱스 (동명이인 구분, -1 = 미선택) */
+  comciganTeacherIndex: number;
   /** 컴시간 학급 표기: 일반고(학년·반) / 제일고(학과·반) */
   comciganClassLabelMode: ComciganClassLabelMode;
   timetableLastSyncAt: string;
@@ -257,6 +260,12 @@ export type AppSettings = {
   timetableLastSyncVia: "" | "direct" | "s2h9";
   timetableLastSyncReason: "" | "startup" | "schedule" | "manual";
   timetableSubstituteNotifiedKey: string;
+};
+
+export type ComciganTeacherOption = {
+  index: number;
+  name: string;
+  label: string;
 };
 
 export type PortalId = "nice" | "edufine" | "goePortal";

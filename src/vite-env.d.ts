@@ -98,7 +98,7 @@ declare global {
         mode: "direct" | "s2h9";
         proxyBaseUrl?: string;
       }) => Promise<
-        | { ok: true; teachers: string[] }
+        | { ok: true; teachers: import("@/types/state").ComciganTeacherOption[] }
         | { ok: false; error: string }
       >;
       syncComciganTeacherTimetable: () => Promise<

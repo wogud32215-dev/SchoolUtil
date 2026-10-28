@@ -4,8 +4,9 @@ import {
   listComciganTeachers,
   searchComciganSchools,
   type ComciganSchoolRow,
+  type ComciganTeacherOption,
 } from "./direct";
-import { listS2h9Teachers, openS2h9Session, pingS2h9School } from "./s2h9-proxy";
+import { openS2h9Session, pingS2h9School } from "./s2h9-proxy";
 
 export type TimetableFetchMode = "direct" | "s2h9";
 
@@ -26,13 +27,13 @@ export async function listTeachers(
   schoolCode: number,
   mode: TimetableFetchMode,
   proxyBaseUrl?: string,
-): Promise<string[]> {
+): Promise<ComciganTeacherOption[]> {
   if (mode === "s2h9") {
     try {
-      const fromProxy = await listS2h9Teachers(String(schoolCode), proxyBaseUrl);
-      if (fromProxy.length > 0) return fromProxy;
+      const session = await openS2h9Session(proxyBaseUrl);
+      await pingS2h9School(session, String(schoolCode));
     } catch {
-      /* fallback */
+      /* s2h9 연결 확인 실패 시에도 컴시간 목록 시도 */
     }
   }
   return listComciganTeachers(schoolCode);
@@ -41,6 +42,7 @@ export async function listTeachers(
 export async function syncTeacherTimetable(
   schoolCode: number,
   teacherName: string,
+  teacherIndex: number,
   mode: TimetableFetchMode,
   schoolLabel?: string,
   proxyBaseUrl?: string,
@@ -67,6 +69,7 @@ export async function syncTeacherTimetable(
     const timetable = await fetchTeacherTimetableDirect(
       schoolCode,
       teacher,
+      teacherIndex,
       schoolLabel,
     );
     return {

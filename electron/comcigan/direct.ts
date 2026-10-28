@@ -17,10 +17,12 @@ import {
   listTeachersFromTimetableJson,
   parseFullTimetable,
   parseSchoolSearch,
+  resolveComciganTeacherIndex,
   type ComciganSchoolRow,
+  type ComciganTeacherOption,
 } from "./parse";
 
-export type { ComciganSchoolRow };
+export type { ComciganSchoolRow, ComciganTeacherOption };
 
 export async function searchComciganSchools(
   query: string,
@@ -47,14 +49,14 @@ export async function fetchTimetableJson(
 
 export async function listComciganTeachers(
   schoolCode: number,
-): Promise<string[]> {
+): Promise<ComciganTeacherOption[]> {
   const { jsonText, routes } = await fetchTimetableJson(schoolCode);
   return listTeachersFromTimetableJson(jsonText, routes.teacherCode);
 }
 
 export function buildTeacherTimetableGrid(
   full: ReturnType<typeof parseFullTimetable>,
-  teacherName: string,
+  teacherIndex: number,
 ): {
   periodCount: number;
   grid: string[][];
@@ -88,11 +90,9 @@ export function buildTeacherTimetableGrid(
         for (let p = 0; p < day.length; p++) {
           const cell = day[p];
           const classCode = String((g + 1) * 100 + (c + 1));
-          const origTeacher = cell.originalTeacher?.trim() ?? "";
           const origSubject = cell.originalSubject?.trim() ?? "";
-          const nowTeacher = cell.teacher?.trim() ?? "";
 
-          if (nowTeacher === teacherName) {
+          if (cell.teacherIndex === teacherIndex) {
             maxPeriod = Math.max(maxPeriod, p + 1);
             const compact = `${classCode}${cell.subject}`.trim();
             let text = compact;
@@ -123,7 +123,8 @@ export function buildTeacherTimetableGrid(
             continue;
           }
 
-          if (origTeacher !== teacherName || !origSubject) continue;
+          const origIdx = cell.originalTeacherIndex ?? -1;
+          if (origIdx !== teacherIndex || !origSubject) continue;
 
           maxPeriod = Math.max(maxPeriod, p + 1);
           const vacatedText = `${classCode}${origSubject} (빠짐)`;
@@ -180,12 +181,28 @@ export function buildTeacherTimetableGrid(
 export async function fetchTeacherTimetableDirect(
   schoolCode: number,
   teacherName: string,
+  teacherIndex: number,
   schoolLabel?: string,
 ): Promise<TimetableData> {
   const { jsonText, routes } = await fetchTimetableJson(schoolCode);
+  const dataTeachers = JSON.parse(jsonText) as Record<string, unknown>;
+  const teachers = dataTeachers[`자료${routes.teacherCode}`] as
+    | string[]
+    | undefined;
+  if (!teachers?.length) {
+    throw new Error("컴시간 시간표 응답을 읽지 못했습니다.");
+  }
+  const resolved = resolveComciganTeacherIndex(
+    teachers,
+    teacherName,
+    teacherIndex,
+  );
+  if (typeof resolved !== "number") {
+    throw new Error(resolved.error);
+  }
   const full = parseFullTimetable(jsonText, routes);
   const { periodCount, grid, substituteFlags, comciganView } =
-    buildTeacherTimetableGrid(full, teacherName);
+    buildTeacherTimetableGrid(full, resolved);
   const title =
     schoolLabel?.trim()
       ? `${teacherName} · ${schoolLabel.trim()}`

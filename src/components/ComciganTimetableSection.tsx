@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { AppSettings } from "@/types/state";
+import type { AppSettings, ComciganTeacherOption } from "@/types/state";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
 import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
@@ -30,7 +30,7 @@ function formatSyncTime(iso: string): string {
 export function ComciganTimetableSection({ draft, onPatch }: Props) {
   const [query, setQuery] = useState("");
   const [schools, setSchools] = useState<SchoolRow[]>([]);
-  const [teachers, setTeachers] = useState<string[]>([]);
+  const [teachers, setTeachers] = useState<ComciganTeacherOption[]>([]);
   const [searching, setSearching] = useState(false);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -64,6 +64,7 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         comciganSchoolCode: String(row.schoolCode),
         comciganSchoolName: row.schoolName,
         comciganTeacherName: "",
+        comciganTeacherIndex: -1,
       });
       setTeachers([]);
       if (!api?.listComciganTeachers) return;
@@ -234,19 +235,34 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         />
       </SettingsRow>
 
-      <SettingsRow title="교사 선택" hint="성* 표기는 컴시간 마스킹입니다.">
+      <SettingsRow title="교사 선택" hint="성* 표기는 컴시간 마스킹입니다. 같은 이름이면 (#번호)로 구분합니다.">
         <div className="settings-field-stack">
           <div className="input-row">
             <select
               className="settings-control"
-              value={draft.comciganTeacherName}
-              onChange={(e) => onPatch({ comciganTeacherName: e.target.value })}
+              value={
+                draft.comciganTeacherIndex >= 0
+                  ? String(draft.comciganTeacherIndex)
+                  : ""
+              }
+              onChange={(e) => {
+                const index = Number(e.target.value);
+                const row = teachers.find((t) => t.index === index);
+                if (!row) {
+                  onPatch({ comciganTeacherName: "", comciganTeacherIndex: -1 });
+                  return;
+                }
+                onPatch({
+                  comciganTeacherName: row.name,
+                  comciganTeacherIndex: row.index,
+                });
+              }}
               disabled={!draft.comciganSchoolCode}
             >
               <option value="">교사를 고르세요</option>
-              {teachers.map((name) => (
-                <option key={name} value={name}>
-                  {name}
+              {teachers.map((row) => (
+                <option key={row.index} value={String(row.index)}>
+                  {row.label}
                 </option>
               ))}
             </select>
@@ -265,7 +281,7 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
             disabled={
               syncing ||
               !draft.comciganSchoolCode ||
-              !draft.comciganTeacherName
+              draft.comciganTeacherIndex < 0
             }
             onClick={() => void runSyncNow()}
           >

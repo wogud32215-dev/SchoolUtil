@@ -9,6 +9,19 @@ Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
 
+### 사용 설명서
+
+설치 폴더의 **`docs`** 에 초기 설정 안내가 포함됩니다.
+
+| 파일 | 용도 |
+|------|------|
+| `docs/사용설명서.html` | 더블 클릭으로 브라우저에서 보기 (권장) |
+| `docs/사용설명서.md` | Markdown 원본 |
+| `docs/assets/설정-예시.jpg` | 이천제일고 연동 예시 화면 |
+| `docs/assets/스마트앱컨트롤-*.png` | 설치 전 스마트 앱 컨트롤 끄기 안내 |
+
+저장소 사본: [`docs/사용설명서.md`](docs/사용설명서.md)
+
 ## Git
 
 원격 저장소: [github.com/wogud32215-dev/SchoolUtil](https://github.com/wogud32215-dev/SchoolUtil)

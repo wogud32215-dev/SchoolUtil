@@ -154,6 +154,7 @@ export type AccentCard = "none" | "clock" | "weather";
 export type BackgroundFill = "transparent" | "panel" | "full";
 
 export type LayoutPreset =
+  | "recommended"
   | "bento"
   | "classic"
   | "calendar"
@@ -248,6 +249,8 @@ export type AppSettings = {
   comciganSchoolCode: string;
   comciganSchoolName: string;
   comciganTeacherName: string;
+  /** 컴시간 교사 배열 인덱스 (동명이인 구분, -1 = 미선택) */
+  comciganTeacherIndex: number;
   comciganClassLabelMode: ComciganClassLabelMode;
   timetableLastSyncAt: string;
   timetableLastSyncError: string;

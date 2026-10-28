@@ -82,6 +82,7 @@ const fallback: PersistedState = {
     comciganSchoolCode: "",
     comciganSchoolName: "",
     comciganTeacherName: "",
+    comciganTeacherIndex: -1,
     comciganClassLabelMode: "general",
     timetableLastSyncAt: "",
     timetableLastSyncError: "",

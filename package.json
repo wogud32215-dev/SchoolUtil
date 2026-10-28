@@ -76,6 +76,13 @@
         "to": "neis-shared.v1.bin"
       }
     ],
+    "extraFiles": [
+      {
+        "from": "docs",
+        "to": "docs",
+        "filter": ["**/*"]
+      }
+    ],
     "artifactName": "${productName}-Setup-${version}.${ext}",
     "win": {
       "icon": "icon.ico",

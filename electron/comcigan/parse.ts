@@ -10,9 +10,18 @@ export type ComciganSchoolRow = {
 export type ComciganLessonCell = {
   subject: string;
   teacher: string;
+  /** 컴시간 `자료*` 교사 배열 인덱스 (-1 = 없음) */
+  teacherIndex: number;
   changed: boolean;
   originalSubject?: string;
   originalTeacher?: string;
+  originalTeacherIndex?: number;
+};
+
+export type ComciganTeacherOption = {
+  index: number;
+  name: string;
+  label: string;
 };
 
 export function decodeComciResponseText(buf: Buffer): string {
@@ -55,16 +64,18 @@ function decodePeriodCell(
   teachers: string[],
   subjects: string[],
   teachersLen: number,
-): { subject: string; teacher: string } {
+): { subject: string; teacher: string; teacherIndex: number } {
   const code = parsePeriodCode(raw);
   if (!code) {
-    return { subject: "", teacher: "" };
+    return { subject: "", teacher: "", teacherIndex: -1 };
   }
+  const teacherIndex = code % 10 ** teachersLen;
   const subject = subjects[(code / 10 ** (teachersLen + 1)) | 0] ?? "";
-  const teacher = teachers[code % 10 ** teachersLen] ?? "";
+  const teacher = teachers[teacherIndex] ?? "";
   return {
     subject: subject && subject !== "19" ? subject : subject ? "—" : "",
     teacher: teacher && teacher !== "*" ? teacher : "",
+    teacherIndex: teacher && teacher !== "*" ? teacherIndex : -1,
   };
 }
 
@@ -113,6 +124,7 @@ export function parseFullTimetable(
           const cell: ComciganLessonCell = {
             subject: nowCell.subject,
             teacher: nowCell.teacher,
+            teacherIndex: nowCell.teacherIndex,
             changed,
           };
           if (pOrigin > 0) {
@@ -124,6 +136,9 @@ export function parseFullTimetable(
             );
             cell.originalSubject = origCell.subject;
             cell.originalTeacher = origCell.teacher;
+            if (origCell.teacherIndex >= 0) {
+              cell.originalTeacherIndex = origCell.teacherIndex;
+            }
           }
           dayRow.push(cell);
         }
@@ -137,14 +152,72 @@ export function parseFullTimetable(
   return result;
 }
 
+function isComciganTeacherName(name: unknown): name is string {
+  return typeof name === "string" && name.length > 1 && name !== "*";
+}
+
+export function buildComciganTeacherOptions(
+  teachers: string[],
+): ComciganTeacherOption[] {
+  const nameCounts = new Map<string, number>();
+  for (let index = 0; index < teachers.length; index++) {
+    const name = teachers[index];
+    if (!isComciganTeacherName(name)) continue;
+    nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
+  }
+  const options: ComciganTeacherOption[] = [];
+  for (let index = 0; index < teachers.length; index++) {
+    const name = teachers[index];
+    if (!isComciganTeacherName(name)) continue;
+    const duplicate = (nameCounts.get(name) ?? 0) > 1;
+    options.push({
+      index,
+      name,
+      label: duplicate ? `${name} (#${index})` : name,
+    });
+  }
+  return options;
+}
+
 export function listTeachersFromTimetableJson(
   jsonText: string,
   teacherCode: string,
-): string[] {
+): ComciganTeacherOption[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
   const teachers = data[`자료${teacherCode}`] as string[] | undefined;
   if (!teachers) return [];
-  return teachers.filter(
-    (name) => typeof name === "string" && name.length > 1 && name !== "*",
-  );
+  return buildComciganTeacherOptions(teachers);
+}
+
+export function resolveComciganTeacherIndex(
+  teachers: string[],
+  teacherName: string,
+  storedIndex: number,
+): number | { error: string } {
+  const name = teacherName.trim();
+  if (!name) {
+    return { error: "교사를 선택해 주세요." };
+  }
+
+  if (
+    Number.isInteger(storedIndex) &&
+    storedIndex >= 0 &&
+    storedIndex < teachers.length
+  ) {
+    const at = teachers[storedIndex]?.trim() ?? "";
+    if (at === name) return storedIndex;
+  }
+
+  const matches: number[] = [];
+  for (let i = 0; i < teachers.length; i++) {
+    if (teachers[i]?.trim() === name) matches.push(i);
+  }
+  if (matches.length === 1) return matches[0]!;
+  if (matches.length === 0) {
+    return { error: "선택한 교사를 시간표에서 찾지 못했습니다." };
+  }
+  return {
+    error:
+      "같은 이름의 교사가 여러 명입니다. 설정에서 교사를 다시 선택해 주세요.",
+  };
 }

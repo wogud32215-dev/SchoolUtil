@@ -73,6 +73,7 @@ const CARD_TEXTURES: AppSettings["cardTexture"][] = [
 ];
 
 const LAYOUT_PRESETS: AppSettings["layoutPreset"][] = [
+  "recommended",
   "bento",
   "classic",
   "calendar",
@@ -143,6 +144,7 @@ export const defaultAppSettings = (): AppSettings => ({
   comciganSchoolCode: "",
   comciganSchoolName: "",
   comciganTeacherName: "",
+  comciganTeacherIndex: -1,
   comciganClassLabelMode: "general",
   timetableLastSyncAt: "",
   timetableLastSyncError: "",
@@ -150,6 +152,12 @@ export const defaultAppSettings = (): AppSettings => ({
   timetableLastSyncReason: "",
   timetableSubstituteNotifiedKey: "",
 });
+
+function normalizeComciganTeacherIndex(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) return -1;
+  return Math.min(n, 9999);
+}
 
 export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
   const base = defaultAppSettings();
@@ -330,6 +338,7 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     comciganSchoolCode: String(raw.comciganSchoolCode ?? "").replace(/\D/g, ""),
     comciganSchoolName: String(raw.comciganSchoolName ?? "").slice(0, 120),
     comciganTeacherName: String(raw.comciganTeacherName ?? "").slice(0, 40),
+    comciganTeacherIndex: normalizeComciganTeacherIndex(raw.comciganTeacherIndex),
     comciganClassLabelMode:
       raw.comciganClassLabelMode === "general" ? "general" : "jeil",
     timetableLastSyncAt: String(raw.timetableLastSyncAt ?? "").slice(0, 40),

@@ -46,6 +46,20 @@ export const DEFAULT_LAYOUT: Record<WidgetId, LayoutItem> = {
   settings: { x: 8, y: 17, w: 4, h: 3 },
 };
 
+const RECOMMENDED_LAYOUT: Record<WidgetId, LayoutItem> = {
+  calendar: { x: 0, y: 0, w: 8, h: 11 },
+  clock: { x: 8, y: 0, w: 2, h: 3 },
+  weather: { x: 10, y: 0, w: 1, h: 3 },
+  workportal: { x: 11, y: 0, w: 1, h: 3 },
+  todo: { x: 8, y: 3, w: 4, h: 8 },
+  memo: { x: 0, y: 11, w: 3, h: 4 },
+  meal: { x: 3, y: 11, w: 2, h: 4 },
+  schoolsched: { x: 5, y: 11, w: 2, h: 6 },
+  timetable: { x: 7, y: 11, w: 5, h: 7 },
+  dday: { x: 0, y: 13, w: 3, h: 4 },
+  settings: { x: 4, y: 23, w: 4, h: 3 },
+};
+
 const CALENDAR_LAYOUT: Record<WidgetId, LayoutItem> = {
   ...DEFAULT_LAYOUT,
   calendar: { x: 0, y: 2, w: 7, h: 13 },
@@ -106,6 +120,7 @@ const WIDE_LAYOUT: Record<WidgetId, LayoutItem> = {
 
 export const LAYOUT_PRESETS: Record<LayoutPreset, Record<WidgetId, LayoutItem>> =
   {
+    recommended: RECOMMENDED_LAYOUT,
     bento: DEFAULT_LAYOUT,
     classic: CLASSIC_LAYOUT,
     calendar: CALENDAR_LAYOUT,
@@ -115,6 +130,7 @@ export const LAYOUT_PRESETS: Record<LayoutPreset, Record<WidgetId, LayoutItem>> 
   };
 
 export const LAYOUT_PRESET_OPTIONS: { id: LayoutPreset; label: string }[] = [
+  { id: "recommended", label: "추천 셋팅" },
   { id: "bento", label: "벤토" },
   { id: "classic", label: "클래식" },
   { id: "calendar", label: "달력 중심" },

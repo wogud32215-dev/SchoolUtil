@@ -136,6 +136,7 @@ function settingsEqual(a: AppSettings, b: AppSettings): boolean {
     a.comciganSchoolCode === b.comciganSchoolCode &&
     a.comciganSchoolName === b.comciganSchoolName &&
     a.comciganTeacherName === b.comciganTeacherName &&
+    a.comciganTeacherIndex === b.comciganTeacherIndex &&
     a.comciganClassLabelMode === b.comciganClassLabelMode
   );
 }

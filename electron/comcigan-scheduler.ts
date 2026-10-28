@@ -32,6 +32,7 @@ export async function runTimetableAutoSync(
     const result = await syncTeacherTimetable(
       code,
       teacher,
+      settings.comciganTeacherIndex,
       settings.timetableFetchMode,
       settings.comciganSchoolName || settings.schoolName,
       settings.timetableProxyBaseUrl,

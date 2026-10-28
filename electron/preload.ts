@@ -77,7 +77,7 @@ const api = {
     proxyBaseUrl?: string;
   }) =>
     ipcRenderer.invoke("comcigan:list-teachers", opts) as Promise<
-      | { ok: true; teachers: string[] }
+      | { ok: true; teachers: import("../src/types/state").ComciganTeacherOption[] }
       | { ok: false; error: string }
     >,
   syncComciganTeacherTimetable: () =>
