@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 type ShapeRect = { x: number; y: number; width: number; height: number };
 
-/** 레이아웃 변경 시 메인 프로세스에 클릭 통과 설정을 다시 맞춘다 (setShape 미사용). */
+/** 레이아웃 변경 시 메인에 카드·UI 영역 사각형을 보내 창 히트 영역(setShape)을 맞춘다. */
 const SHAPE_PAD = 4;
 
 const SHAPE_SELECTORS = [
@@ -73,6 +73,10 @@ export function useWidgetShape(enabled: boolean, layoutKey: string) {
     reportRef.current = report;
 
     report();
+    const burstMs = [0, 80, 200, 500, 1200];
+    for (const ms of burstMs) {
+      window.setTimeout(report, ms);
+    }
     const ro = new ResizeObserver(report);
     ro.observe(document.documentElement);
     const dashboard = document.querySelector(".dashboard");

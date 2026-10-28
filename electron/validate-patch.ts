@@ -96,6 +96,12 @@ function sanitizeSettings(raw: unknown): AppSettings | undefined {
     portalSessionExtend: Boolean(s.portalSessionExtend),
     portalSessionExtendMinutes: s.portalSessionExtendMinutes,
     portalOsCertInput: Boolean(s.portalOsCertInput),
+    brityMessengerEnabled: Boolean(s.brityMessengerEnabled),
+    brityMessengerExePath: clampString(s.brityMessengerExePath, 500),
+    brityMessengerCertLabel: clampString(s.brityMessengerCertLabel, 120),
+    brityMessengerShareGoeCredentials:
+      s.brityMessengerShareGoeCredentials !== false,
+    brityMessengerPassword: clampString(s.brityMessengerPassword, 200),
   });
 }
 

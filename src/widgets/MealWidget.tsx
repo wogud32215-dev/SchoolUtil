@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import {
   WidgetEmpty,
   WidgetFetchError,
@@ -112,48 +119,51 @@ export function MealWidget({ settings }: Props) {
     );
   }
 
+  function stopGridDrag(e: MouseEvent | PointerEvent) {
+    e.stopPropagation();
+  }
+
   return (
     <div className="meal-widget">
-      <div className="meal-widget-head" title="드래그해 위치 이동">
-        {isToday ? (
-          <h3 className="meal-widget-title">
-            <WidgetHeaderIcon
-              id="meal"
-              size={14}
-              className="widget-header-icon meal-widget-icon"
-            />
-            {mealWidgetTitle(selectedYmd)}
-          </h3>
-        ) : (
-          <button
-            type="button"
-            className="meal-widget-title meal-widget-title-btn"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={goToday}
-            title="오늘 급식으로"
-          >
-            <WidgetHeaderIcon
-              id="meal"
-              size={14}
-              className="widget-header-icon meal-widget-icon"
-            />
-            {mealWidgetTitle(selectedYmd)}
-          </button>
-        )}
+      <div className="meal-widget-head">
+        <h3
+          className="meal-widget-title meal-widget-drag"
+          title="드래그해 위치 이동"
+        >
+          <WidgetHeaderIcon
+            id="meal"
+            size={14}
+            className="widget-header-icon meal-widget-icon"
+          />
+          {mealWidgetTitle(selectedYmd)}
+        </h3>
         <nav className="meal-nav" aria-label="급식 날짜">
           <button
             type="button"
             className="meal-nav-btn"
-            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={stopGridDrag}
+            onPointerDown={stopGridDrag}
             onClick={goPrev}
             aria-label="이전 날"
           >
             ‹
           </button>
+          {!isToday ? (
+            <button
+              type="button"
+              className="meal-today-btn"
+              onMouseDown={stopGridDrag}
+              onPointerDown={stopGridDrag}
+              onClick={goToday}
+            >
+              오늘
+            </button>
+          ) : null}
           <button
             type="button"
             className="meal-nav-btn"
-            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={stopGridDrag}
+            onPointerDown={stopGridDrag}
             onClick={goNext}
             aria-label="다음 날"
           >

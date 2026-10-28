@@ -18,6 +18,20 @@ export function WorkPortalWidget({ settings }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  async function launchBrity() {
+    setErrorMsg(null);
+    setBusy(true);
+    const res = await window.schoolUtil?.launchBrityMessenger();
+    setBusy(false);
+    if (!res) {
+      setErrorMsg("Electron 앱에서만 실행할 수 있습니다.");
+      return;
+    }
+    if (!res.ok) {
+      setErrorMsg(res.error);
+    }
+  }
+
   async function launch(portalId: PortalId) {
     setErrorMsg(null);
     setBusy(true);
@@ -50,6 +64,16 @@ export function WorkPortalWidget({ settings }: Props) {
             </button>
           );
         })}
+        {settings.brityMessengerEnabled ? (
+          <button
+            type="button"
+            className="btn-primary portal-open-btn"
+            disabled={busy}
+            onClick={() => void launchBrity()}
+          >
+            Brity 메신저
+          </button>
+        ) : null}
       </div>
       {errorMsg ? (
         <p className="work-portal-msg work-portal-msg--error" role="alert">

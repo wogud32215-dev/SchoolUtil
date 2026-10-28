@@ -1,4 +1,7 @@
-import type { ComciganTimetableView } from "@/types/state";
+import type {
+  ComciganClassLabelMode,
+  ComciganTimetableView,
+} from "@/types/state";
 import {
   cellChips,
   cellHasSubstitute,
@@ -12,6 +15,7 @@ import { TIMETABLE_DAY_LABELS } from "@/utils/timetableSubstitute";
 type Props = {
   periodCount: number;
   view: ComciganTimetableView;
+  classLabelMode?: ComciganClassLabelMode;
   todayDayIndex: number;
   onManualCellClick?: (dayIndex: number, periodIndex: number) => void;
 };
@@ -19,6 +23,7 @@ type Props = {
 export function ComciganTimetableGrid({
   periodCount,
   view,
+  classLabelMode = "jeil",
   todayDayIndex,
   onManualCellClick,
 }: Props) {
@@ -132,6 +137,7 @@ export function ComciganTimetableGrid({
                                 {formatLessonForDisplay(
                                   chip.classCode,
                                   chip.subject,
+                                  classLabelMode,
                                 )}
                               </span>
                               {chip.changed && chip.originalSubject ? (

@@ -154,13 +154,16 @@ export function buildTodayGlanceSyncContent(
   const tt = buildTimetableForDisplay(normalizeTimetable(state.timetable));
   const dayCol = weekdayColumnIndex(now);
   const classes: string[] = [];
+  const labelMode = state.settings.comciganClassLabelMode ?? "jeil";
   if (dayCol !== null) {
     for (let p = 0; p < tt.periodCount && classes.length < 6; p++) {
       const chips =
         tt.comciganView?.chips[dayCol]?.[p]?.filter((c) => !c.vacated) ?? [];
       if (chips.length > 0) {
         const lessons = chips
-          .map((c) => formatLessonForDisplay(c.classCode, c.subject))
+          .map((c) =>
+            formatLessonForDisplay(c.classCode, c.subject, labelMode),
+          )
           .filter((line) => line.length > 0);
         if (lessons.length > 0) {
           classes.push(`${p + 1}교시 ${lessons.join(" · ")}`);
@@ -169,7 +172,9 @@ export function buildTodayGlanceSyncContent(
       }
       const raw = (tt.grid[dayCol]?.[p] ?? "").trim();
       if (raw) {
-        classes.push(`${p + 1}교시 ${formatTimetableCellText(raw)}`);
+        classes.push(
+          `${p + 1}교시 ${formatTimetableCellText(raw, labelMode)}`,
+        );
       }
     }
   }

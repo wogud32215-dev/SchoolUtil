@@ -41,6 +41,7 @@ export function WorkPortalSettingsSection({
   const [testMsg, setTestMsg] = useState<string | null>(null);
   const [debugUrl, setDebugUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [brityHasPassword, setBrityHasPassword] = useState(false);
 
   useEffect(() => {
     const api = window.schoolUtil;
@@ -58,11 +59,16 @@ export function WorkPortalSettingsSection({
       });
     });
     void api.getPortalDebugHelpUrl?.().then((r) => setDebugUrl(r.url));
+    void api.getBrityCredentialStatus?.().then((st) =>
+      setBrityHasPassword(st.hasPassword),
+    );
   }, [
     draft.portalBrowser,
     draft.portalNiceUser,
     draft.portalEdufineUser,
     draft.portalGoeUser,
+    draft.brityMessengerPassword,
+    draft.brityMessengerShareGoeCredentials,
   ]);
 
   function patchPortal(
@@ -118,6 +124,33 @@ export function WorkPortalSettingsSection({
       [portalId]: { hasUser: false, hasPassword: false },
     }));
     await onSave();
+  }
+
+  async function clearBrityCredentials() {
+    if (!window.confirm("Brity 메신저 인증서 비밀번호를 삭제할까요?")) {
+      return;
+    }
+    await window.schoolUtil?.clearBrityCredentials();
+    onPatch({ brityMessengerPassword: "" });
+    setBrityHasPassword(false);
+    await onSave();
+  }
+
+  async function tryBrityNow() {
+    setTestMsg(null);
+    setBusy(true);
+    await onSave();
+    const res = await window.schoolUtil?.launchBrityMessenger();
+    setBusy(false);
+    if (!res) {
+      setTestMsg("Electron 앱에서만 실행할 수 있습니다.");
+      return;
+    }
+    if (!res.ok) {
+      setTestMsg(res.error);
+      return;
+    }
+    setTestMsg(res.summary ?? "실행을 마쳤습니다.");
   }
 
   async function tryNow(portalId: PortalId) {
@@ -270,6 +303,112 @@ export function WorkPortalSettingsSection({
           </div>
         </div>
       ))}
+
+      <div className="portal-settings-block">
+        <div className="portal-settings-block-head">
+          <strong>Brity 메신저 (앱)</strong>
+          <label className="portal-settings-toggle">
+            <input
+              type="checkbox"
+              checked={draft.brityMessengerEnabled}
+              onChange={(e) =>
+                onPatch({ brityMessengerEnabled: e.target.checked })
+              }
+            />
+            카드에 표시
+          </label>
+        </div>
+        {formatLastRun(draft.brityMessengerLastRun) ? (
+          <p className="muted portal-settings-last">
+            마지막 실행: {formatLastRun(draft.brityMessengerLastRun)}
+          </p>
+        ) : null}
+        <p className="muted" style={{ fontSize: "0.8rem", margin: "0 0 8px" }}>
+          «로그인 방식»이 <strong>자동 로그인 시도</strong>일 때 인증서 로그인
+          선택·«로그인» 클릭 후 K-Sign 등 OS 창에 암호를 넣습니다. 인증서
+          목록 선택은 수동입니다.
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.portalOsCertInput}
+            onChange={(e) => onPatch({ portalOsCertInput: e.target.checked })}
+          />
+          인증서 비밀번호 OS 창 자동 입력 (실험, Brity·업무포털 공용)
+        </label>
+        <label>
+          설치 폴더 또는 실행 파일 (비우면 C:\BrityWorks\BrityMessenger 등 탐색)
+          <input
+            type="text"
+            autoComplete="off"
+            placeholder="C:\BrityWorks\BrityMessenger"
+            value={draft.brityMessengerExePath}
+            onChange={(e) =>
+              onPatch({ brityMessengerExePath: e.target.value })
+            }
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.brityMessengerShareGoeCredentials}
+            onChange={(e) =>
+              onPatch({ brityMessengerShareGoeCredentials: e.target.checked })
+            }
+          />
+          경기 업무포털과 같은 인증서 정보 사용
+        </label>
+        <label>
+          인증서 표시 이름 (목록에서 직접 고를 때 참고)
+          <input
+            type="text"
+            autoComplete="off"
+            disabled={draft.brityMessengerShareGoeCredentials}
+            value={
+              draft.brityMessengerShareGoeCredentials
+                ? draft.portalGoeUser
+                : draft.brityMessengerCertLabel
+            }
+            onChange={(e) =>
+              onPatch({ brityMessengerCertLabel: e.target.value })
+            }
+          />
+        </label>
+        {!draft.brityMessengerShareGoeCredentials ? (
+          <label>
+            인증서 비밀번호 (로컬 암호화)
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder={brityHasPassword ? "저장됨 — 변경 시만 입력" : ""}
+              value={draft.brityMessengerPassword}
+              onChange={(e) =>
+                onPatch({ brityMessengerPassword: e.target.value })
+              }
+            />
+          </label>
+        ) : null}
+        <div className="portal-settings-actions">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={busy || !draft.brityMessengerEnabled}
+            onClick={() => void tryBrityNow()}
+          >
+            지금 한 번 해 보기
+          </button>
+          {!draft.brityMessengerShareGoeCredentials &&
+          (brityHasPassword || draft.brityMessengerPassword) ? (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => void clearBrityCredentials()}
+            >
+              저장 지우기
+            </button>
+          ) : null}
+        </div>
+      </div>
 
       <details className="portal-settings-advanced">
         <summary>고급 · 자동 로그인 (실험, 공용 PC 비권장)</summary>

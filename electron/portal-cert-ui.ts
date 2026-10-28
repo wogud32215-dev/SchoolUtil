@@ -204,6 +204,7 @@ export async function tryOsCertPasswordInput(
   let bestScoreSeen = 0;
 
   let lastUiaAttempt = 0;
+  let certDialogTrustedViaUia = false;
 
   while (Date.now() - started < MAX_WAIT_MS) {
     const elapsed = Date.now() - started;
@@ -218,8 +219,11 @@ export async function tryOsCertPasswordInput(
           return { ok: true };
         }
         dialogHwnd = uia.windowHwnd;
-        dialogTitle = "(UI Automation)";
-        appendPortalLog("UI Automation으로 인증서 창을 찾았습니다.");
+        dialogTitle = readWindowText(uia.windowHwnd, api.GetWindowTextW);
+        certDialogTrustedViaUia = Boolean(uia.trusted);
+        appendPortalLog(
+          `UI Automation으로 인증서 창을 찾았습니다 (${dialogTitle || "제목 없음"}).`,
+        );
         break;
       }
       appendPortalLog(`UIA: ${uia.reason}`);
@@ -250,7 +254,10 @@ export async function tryOsCertPasswordInput(
     return { ok: false, error: "인증서 창을 찾지 못했습니다." };
   }
 
-  if (!isCertDialogWindow(api, dialogHwnd, dialogTitle)) {
+  if (
+    !certDialogTrustedViaUia &&
+    !isCertDialogWindow(api, dialogHwnd, dialogTitle)
+  ) {
     appendPortalLog(
       `잘못된 창(${dialogTitle || "?"}) — 인증서 UI가 확인되지 않아 비밀번호를 넣지 않습니다.`,
     );

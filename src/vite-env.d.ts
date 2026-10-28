@@ -55,6 +55,17 @@ declare global {
       clearPortalCredentials: (
         portalId: import("@/types/state").PortalId,
       ) => Promise<{ ok: boolean }>;
+      launchBrityMessenger: () => Promise<
+        | {
+            ok: true;
+            mode: "launch_only" | "automation";
+            summary?: string;
+            reason?: "cert_auth";
+          }
+        | { ok: false; error: string }
+      >;
+      getBrityCredentialStatus: () => Promise<{ hasPassword: boolean }>;
+      clearBrityCredentials: () => Promise<{ ok: boolean }>;
       fetchNeisSchedule: (range?: {
         fromYmd?: string;
         toYmd?: string;

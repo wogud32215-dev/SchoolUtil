@@ -30,12 +30,12 @@ const THEME_SWATCHES: { id: AppTheme; label: string }[] = [
 ];
 
 const TEXTURE_OPTIONS: { id: CardTexture; label: string }[] = [
-  { id: "glass", label: "기본" },
-  { id: "paper", label: "지면" },
-  { id: "memo", label: "메모지" },
-  { id: "whiteboard", label: "화이트보드" },
-  { id: "chalkboard", label: "칠판" },
-  { id: "terminal", label: "터미널" },
+  { id: "glass", label: "표준" },
+  { id: "paper", label: "종이질" },
+  { id: "memo", label: "메모장" },
+  { id: "whiteboard", label: "마커판" },
+  { id: "chalkboard", label: "분필판" },
+  { id: "terminal", label: "콘솔" },
 ];
 
 const DENSITY_OPTIONS: { id: UiDensity; label: string }[] = [
@@ -140,7 +140,7 @@ export function DesignSettingsSection({ settings, onDesignSave }: Props) {
 
       <SettingsRow
         title="카드 질감"
-        hint="유리·지면·메모지 등 카드 표면 느낌을 바꿉니다."
+        hint="유리·종이질·메모장·마커판 등 카드 표면 느낌을 바꿉니다."
       >
         <div
           className="design-option-row"

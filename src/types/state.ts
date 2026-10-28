@@ -172,6 +172,9 @@ export type TodayGlanceSections = {
   weather: boolean;
 };
 
+/** 컴시간 시간표에 표시할 학급 이름 방식 */
+export type ComciganClassLabelMode = "general" | "jeil";
+
 export type AppSettings = {
   theme: AppTheme;
   fontFamily: FontFamilySetting;
@@ -235,12 +238,20 @@ export type AppSettings = {
   portalLastNice?: PortalRunRecord;
   portalLastEdufine?: PortalRunRecord;
   portalLastGoe?: PortalRunRecord;
+  brityMessengerEnabled: boolean;
+  brityMessengerExePath: string;
+  brityMessengerCertLabel: string;
+  brityMessengerShareGoeCredentials: boolean;
+  brityMessengerPassword: string;
+  brityMessengerLastRun?: PortalRunRecord;
   timetableAutoSync: boolean;
   timetableFetchMode: "direct" | "s2h9";
   timetableProxyBaseUrl: string;
   comciganSchoolCode: string;
   comciganSchoolName: string;
   comciganTeacherName: string;
+  /** 컴시간 학급 표기: 일반고(학년·반) / 제일고(학과·반) */
+  comciganClassLabelMode: ComciganClassLabelMode;
   timetableLastSyncAt: string;
   timetableLastSyncError: string;
   timetableLastSyncVia: "" | "direct" | "s2h9";

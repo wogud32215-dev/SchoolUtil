@@ -12,6 +12,7 @@ type SecretsFile = {
   v: 1;
   neisApiKeyEnc?: string;
   portals?: Partial<Record<PortalId, PortalSecretsRow>>;
+  brityMessengerPasswordEnc?: string;
 };
 
 const filePath = (): string =>
@@ -144,7 +145,33 @@ type PortalSecretFields = {
   portalEdufinePassword?: string;
   portalGoeUser?: string;
   portalGoePassword?: string;
+  brityMessengerPassword?: string;
 };
+
+export function getBrityMessengerPassword(): string {
+  return decryptField(readFile().brityMessengerPasswordEnc);
+}
+
+export function setBrityMessengerPassword(plain: string): void {
+  const trimmed = plain.trim();
+  const data = readFile();
+  if (!trimmed) {
+    writeFile({ ...data, brityMessengerPasswordEnc: undefined });
+    return;
+  }
+  writeFile({
+    ...data,
+    brityMessengerPasswordEnc: encryptField(trimmed),
+  });
+}
+
+export function getBrityMessengerCredentialStatus(): { hasPassword: boolean } {
+  return { hasPassword: Boolean(readFile().brityMessengerPasswordEnc) };
+}
+
+export function clearBrityMessengerCredentials(): void {
+  setBrityMessengerPassword("");
+}
 
 export function stripPortalSecretsForDisk<T extends PortalSecretFields>(
   settings: T,
@@ -157,6 +184,7 @@ export function stripPortalSecretsForDisk<T extends PortalSecretFields>(
     portalEdufinePassword: "",
     portalGoeUser: "",
     portalGoePassword: "",
+    brityMessengerPassword: "",
   };
 }
 
@@ -175,6 +203,8 @@ export function mergePortalSecretsForRuntime<T extends PortalSecretFields>(
       edufine.password || settings.portalEdufinePassword || "",
     portalGoeUser: goePortal.user || settings.portalGoeUser || "",
     portalGoePassword: goePortal.password || settings.portalGoePassword || "",
+    brityMessengerPassword:
+      getBrityMessengerPassword() || settings.brityMessengerPassword || "",
   };
 }
 
@@ -192,6 +222,18 @@ export function persistPortalSecretsFromSettings(
     settings.portalGoeUser,
     settings.portalGoePassword,
   );
+  applyBrityPassword(settings.brityMessengerPassword);
+}
+
+function applyBrityPassword(password: string | undefined): void {
+  const p = String(password ?? "");
+  const existing = getBrityMessengerPassword();
+  if (!p.trim()) {
+    if (!existing) return;
+    return;
+  }
+  const nextPass = p.trim() ? p.trim() : existing;
+  setBrityMessengerPassword(nextPass);
 }
 
 function applyPortalPair(
@@ -265,4 +307,37 @@ export function migratePlaintextPortalSecrets(settings: PortalSecretFields): voi
       settings.portalGoePassword ?? "",
     );
   }
+  const brityStored = getBrityMessengerPassword();
+  if (!brityStored && settings.brityMessengerPassword?.trim()) {
+    setBrityMessengerPassword(settings.brityMessengerPassword);
+  }
+}
+
+/** Brity 자동 로그인에 쓸 인증서 비밀번호·표시 이름 */
+export function resolveBrityCertCredentials(
+  settings: PortalSecretFields & {
+    brityMessengerShareGoeCredentials?: boolean;
+    brityMessengerCertLabel?: string;
+  },
+): { certLabel: string; password: string } {
+  if (settings.brityMessengerShareGoeCredentials !== false) {
+    const goe = getPortalCredentials("goePortal");
+    return {
+      certLabel:
+        goe.user.trim() ||
+        String(settings.portalGoeUser ?? "").trim() ||
+        String(settings.brityMessengerCertLabel ?? "").trim(),
+      password:
+        goe.password.trim() ||
+        String(settings.portalGoePassword ?? "").trim() ||
+        getBrityMessengerPassword() ||
+        String(settings.brityMessengerPassword ?? "").trim(),
+    };
+  }
+  return {
+    certLabel: String(settings.brityMessengerCertLabel ?? "").trim(),
+    password:
+      getBrityMessengerPassword() ||
+      String(settings.brityMessengerPassword ?? "").trim(),
+  };
 }

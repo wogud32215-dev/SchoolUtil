@@ -1,17 +1,23 @@
-import type { TimetableData } from "@/types/state";
+import type { ComciganClassLabelMode, TimetableData } from "@/types/state";
 import { formatClassCodeDisplay } from "@/utils/jeilClassLabels";
 import { listSubstituteEntries } from "@/utils/timetableSubstitute";
 
 type Props = {
   open: boolean;
   timetable: TimetableData;
+  classLabelMode?: ComciganClassLabelMode;
   onClose: () => void;
 };
 
-export function ComciganSubstituteModal({ open, timetable, onClose }: Props) {
+export function ComciganSubstituteModal({
+  open,
+  timetable,
+  classLabelMode = "jeil",
+  onClose,
+}: Props) {
   if (!open) return null;
 
-  const entries = listSubstituteEntries(timetable);
+  const entries = listSubstituteEntries(timetable, classLabelMode);
 
   return (
     <div
@@ -56,7 +62,7 @@ export function ComciganSubstituteModal({ open, timetable, onClose }: Props) {
                       <span className="comcigan-substitute-diff-label">변경</span>
                       <span className="comcigan-substitute-diff-value comcigan-substitute-diff-value--now">
                         {e.classCode
-                          ? `${formatClassCodeDisplay(e.classCode)} ${e.subject}`.trim()
+                          ? `${formatClassCodeDisplay(e.classCode, classLabelMode)} ${e.subject}`.trim()
                           : e.subject}
                         <span className="comcigan-substitute-inline-badge">교체</span>
                       </span>

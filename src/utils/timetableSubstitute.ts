@@ -1,4 +1,8 @@
-import type { TimetableData, TimetableSubstituteChange } from "@/types/state";
+import type {
+  ComciganClassLabelMode,
+  TimetableData,
+  TimetableSubstituteChange,
+} from "@/types/state";
 import {
   classCodeToGradeClass,
   formatSubstituteWhen,
@@ -32,7 +36,10 @@ function legacyParseCell(text: string): Partial<TimetableSubstituteEntry> {
   return { originalSubject, subject: subjectPart };
 }
 
-function changeToEntry(c: TimetableSubstituteChange): TimetableSubstituteEntry {
+function changeToEntry(
+  c: TimetableSubstituteChange,
+  mode: ComciganClassLabelMode,
+): TimetableSubstituteEntry {
   const dayLabel = TIMETABLE_DAY_LABELS[c.dayIndex] ?? "";
   return {
     dayIndex: c.dayIndex,
@@ -47,11 +54,11 @@ function changeToEntry(c: TimetableSubstituteChange): TimetableSubstituteEntry {
       c.periodTime,
     ),
     classCode: c.classCode,
-    gradeClassLabel: classCodeToGradeClass(c.classCode),
+    gradeClassLabel: classCodeToGradeClass(c.classCode, mode),
     subject: c.subject,
     originalSubject: c.originalSubject,
     text: c.classCode
-      ? `${formatClassCodeDisplay(c.classCode)} ${c.subject}`.trim()
+      ? `${formatClassCodeDisplay(c.classCode, mode)} ${c.subject}`.trim()
       : c.subject,
   };
 }
@@ -71,11 +78,12 @@ export function isSubstituteCell(
 
 export function listSubstituteEntries(
   tt: TimetableData,
+  mode: ComciganClassLabelMode = "jeil",
 ): TimetableSubstituteEntry[] {
   const norm = normalizeTimetable(tt);
   const fromView = norm.comciganView?.changes ?? [];
   if (fromView.length > 0) {
-    return fromView.map(changeToEntry);
+    return fromView.map((c) => changeToEntry(c, mode));
   }
 
   const out: TimetableSubstituteEntry[] = [];
@@ -87,7 +95,7 @@ export function listSubstituteEntries(
       const legacy = legacyParseCell(text);
       const dateYmd = norm.comciganView?.weekDates[d] ?? "";
       const periodTime = norm.comciganView?.periodTimes[p] ?? "";
-      const displayText = formatTimetableCellText(text);
+      const displayText = formatTimetableCellText(text, mode);
       const subjectRaw = legacy.subject ?? text;
       out.push({
         dayIndex: d,
@@ -98,7 +106,7 @@ export function listSubstituteEntries(
         whenLabel: formatSubstituteWhen(dateYmd, d, p + 1, periodTime),
         classCode: "",
         gradeClassLabel: "",
-        subject: formatTimetableCellText(subjectRaw),
+        subject: formatTimetableCellText(subjectRaw, mode),
         originalSubject: legacy.originalSubject ?? "—",
         text: displayText,
       });
@@ -107,7 +115,10 @@ export function listSubstituteEntries(
   return out;
 }
 
-export function timetableSubstituteFingerprint(tt: TimetableData): string {
+export function timetableSubstituteFingerprint(
+  tt: TimetableData,
+  mode: ComciganClassLabelMode = "jeil",
+): string {
   const norm = normalizeTimetable(tt);
   const changes = norm.comciganView?.changes;
   if (changes?.length) {
@@ -118,15 +129,18 @@ export function timetableSubstituteFingerprint(tt: TimetableData): string {
       )
       .join("|");
   }
-  return listSubstituteEntries(norm)
+  return listSubstituteEntries(norm, mode)
     .map((e) => `${e.dayIndex}:${e.period}:${e.text}`)
     .join("|");
 }
 
-export function countSubstituteCells(tt: TimetableData): number {
+export function countSubstituteCells(
+  tt: TimetableData,
+  mode: ComciganClassLabelMode = "jeil",
+): number {
   const norm = normalizeTimetable(tt);
   if (norm.comciganView?.changes.length) {
     return norm.comciganView.changes.length;
   }
-  return listSubstituteEntries(norm).length;
+  return listSubstituteEntries(norm, mode).length;
 }

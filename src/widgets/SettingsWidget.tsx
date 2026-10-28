@@ -120,12 +120,19 @@ function settingsEqual(a: AppSettings, b: AppSettings): boolean {
     a.portalSessionExtend === b.portalSessionExtend &&
     a.portalSessionExtendMinutes === b.portalSessionExtendMinutes &&
     a.portalOsCertInput === b.portalOsCertInput &&
+    a.brityMessengerEnabled === b.brityMessengerEnabled &&
+    a.brityMessengerExePath === b.brityMessengerExePath &&
+    a.brityMessengerCertLabel === b.brityMessengerCertLabel &&
+    a.brityMessengerShareGoeCredentials ===
+      b.brityMessengerShareGoeCredentials &&
+    a.brityMessengerPassword === b.brityMessengerPassword &&
     a.timetableAutoSync === b.timetableAutoSync &&
     a.timetableFetchMode === b.timetableFetchMode &&
     a.timetableProxyBaseUrl === b.timetableProxyBaseUrl &&
     a.comciganSchoolCode === b.comciganSchoolCode &&
     a.comciganSchoolName === b.comciganSchoolName &&
-    a.comciganTeacherName === b.comciganTeacherName
+    a.comciganTeacherName === b.comciganTeacherName &&
+    a.comciganClassLabelMode === b.comciganClassLabelMode
   );
 }
 

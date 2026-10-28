@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type UiaCertResult =
-  | { ok: true; windowHwnd: bigint; filled: boolean }
+  | { ok: true; windowHwnd: bigint; filled: boolean; trusted?: boolean }
   | { ok: false; reason: string };
 
 function resolveUiaScriptPath(): string {
@@ -79,12 +79,14 @@ export async function tryCertPasswordViaUia(
           const data = JSON.parse(line) as {
             hwnd?: number;
             filled?: boolean;
+            trusted?: boolean;
           };
           if (data.hwnd && data.hwnd > 0) {
             resolve({
               ok: true,
               windowHwnd: BigInt(data.hwnd),
               filled: Boolean(data.filled),
+              trusted: Boolean(data.trusted),
             });
             return;
           }

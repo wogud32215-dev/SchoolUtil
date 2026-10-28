@@ -21,38 +21,54 @@ $windows = $root.FindAll(
   [Windows.Automation.Condition]::TrueCondition)
 
 $skip = @('Chrome', 'Edge', 'Whale', 'SchoolUtil', 'Cursor', 'Visual Studio')
+$editCond = New-Object Windows.Automation.PropertyCondition(
+  $AE::ControlTypeProperty,
+  [Windows.Automation.ControlType]::Edit)
 $targetWindow = $null
+$edit = $null
 foreach ($win in $windows) {
   try {
     if ($win.Current.IsOffscreen) { continue }
     $title = $win.Current.Name
     if ($title -and ($skip | Where-Object { $title -like "*$_*" })) { continue }
   } catch { continue }
-  $desc = $win.FindAll(
-    [Windows.Automation.TreeScope]::Descendants,
-    [Windows.Automation.Condition]::TrueCondition)
-  $names = @($title)
-  foreach ($el in $desc) {
-    try { if ($el.Current.Name) { $names += $el.Current.Name } } catch { }
+
+  $edits = @($win.FindAll([Windows.Automation.TreeScope]::Descendants, $editCond))
+  $pwEdit = $edits | Where-Object { try { $_.Current.IsPassword } catch { $false } } | Select-Object -First 1
+  if (-not $pwEdit) { continue }
+
+  $title = $win.Current.Name
+  if ($title -like '*Brity Messenger*') { continue }
+  $certish = ($title -like '*K-SIGN*') -or ($title -like '*K-Sign*') -or ($title -like '*전자서명*') -or ($title -like "*$kCert*") -or ($title -like '*인증서*')
+  if (-not $certish -and (-not $title -or -not $title.Trim())) {
+    $certish = $true
   }
-  $blob = $names -join ' '
-  if (($blob -like "*$kCert*$kPw*") -or ($blob -like '*K-SIGN*') -or ($blob -like "*$kSign*")) {
-    $targetWindow = $win
-    break
+  if (-not $certish) {
+    $desc = $win.FindAll(
+      [Windows.Automation.TreeScope]::Descendants,
+      [Windows.Automation.Condition]::TrueCondition)
+    $names = @($title)
+    $n = 0
+    foreach ($el in $desc) {
+      if ($n++ -gt 120) { break }
+      try { if ($el.Current.Name) { $names += $el.Current.Name } } catch { }
+    }
+    $blob = $names -join ' '
+    $certish = ($blob -like "*$kCert*$kPw*") -or (
+      ($blob -like '*K-SIGN*' -or $blob -like "*$kSign*") -and $blob -like "*$kPw*"
+    )
   }
+  if (-not $certish) { continue }
+
+  $targetWindow = $win
+  $edit = $pwEdit
+  break
 }
 if (-not $targetWindow) {
   Write-Output '{"error":"no cert window"}'
   exit 2
 }
 $hwnd = $targetWindow.Current.NativeWindowHandle
-
-$editCond = New-Object Windows.Automation.PropertyCondition(
-  $AE::ControlTypeProperty,
-  [Windows.Automation.ControlType]::Edit)
-$edits = @($targetWindow.FindAll([Windows.Automation.TreeScope]::Descendants, $editCond))
-$edit = $edits | Where-Object { try { $_.Current.IsPassword } catch { $false } } | Select-Object -First 1
-if (-not $edit -and $edits.Count -gt 0) { $edit = $edits[$edits.Count - 1] }
 
 try { $targetWindow.SetFocus() } catch { }
 Start-Sleep -Milliseconds 200
@@ -77,7 +93,7 @@ if ($edit) {
   }
 }
 if (-not $filled) {
-  Write-Output (@{ hwnd = [int]$hwnd; filled = $false } | ConvertTo-Json -Compress)
+  Write-Output (@{ hwnd = [int]$hwnd; filled = $false; trusted = $true } | ConvertTo-Json -Compress)
   exit 0
 }
 

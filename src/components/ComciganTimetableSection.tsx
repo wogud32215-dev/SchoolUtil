@@ -216,6 +216,25 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         </div>
       </SettingsRow>
 
+      <SettingsRow
+        title="학급 이름 표기"
+        hint="일반고는 컴시간 학년·반 코드를 그대로 씁니다. 제일고(농업계)는 학과·반 약칭으로 바꿉니다."
+      >
+        <SettingsSegmented
+          aria-label="컴시간 학급 이름 표기"
+          value={draft.comciganClassLabelMode}
+          onChange={(v) =>
+            onPatch({
+              comciganClassLabelMode: v as AppSettings["comciganClassLabelMode"],
+            })
+          }
+          options={[
+            { value: "general", label: "일반고 ver" },
+            { value: "jeil", label: "제일고 ver" },
+          ]}
+        />
+      </SettingsRow>
+
       <SettingsRow title="교사 선택" hint="성* 표기는 컴시간 마스킹입니다.">
         <div className="settings-field-stack">
           <div className="input-row">

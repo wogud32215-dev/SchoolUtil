@@ -173,6 +173,8 @@ export type TodayGlanceSections = {
   weather: boolean;
 };
 
+export type ComciganClassLabelMode = "general" | "jeil";
+
 export type AppSettings = {
   theme: AppTheme;
   fontFamily: FontFamilySetting;
@@ -230,6 +232,14 @@ export type AppSettings = {
   portalLastNice?: PortalRunRecord;
   portalLastEdufine?: PortalRunRecord;
   portalLastGoe?: PortalRunRecord;
+  brityMessengerEnabled: boolean;
+  brityMessengerExePath: string;
+  /** 인증서 목록에 보이는 이름 (자동 선택은 1차 미지원, 로그 안내용) */
+  brityMessengerCertLabel: string;
+  /** true면 경기 업무포털(goe)에 저장한 인증서 비밀번호·표시 이름을 씁니다 */
+  brityMessengerShareGoeCredentials: boolean;
+  brityMessengerPassword: string;
+  brityMessengerLastRun?: PortalRunRecord;
   /** 컴시간 교사 시간표 자동 갱신 (08:00·13:00·앱 시작) */
   timetableAutoSync: boolean;
   timetableFetchMode: "direct" | "s2h9";
@@ -238,6 +248,7 @@ export type AppSettings = {
   comciganSchoolCode: string;
   comciganSchoolName: string;
   comciganTeacherName: string;
+  comciganClassLabelMode: ComciganClassLabelMode;
   timetableLastSyncAt: string;
   timetableLastSyncError: string;
   timetableLastSyncVia: "" | "direct" | "s2h9";
@@ -254,6 +265,21 @@ const PORTAL_LAST_RUN_KEY: Record<
   edufine: "portalLastEdufine",
   goePortal: "portalLastGoe",
 };
+
+export function recordBrityMessengerRun(ok: boolean, summary: string): void {
+  const settings = getState().settings;
+  const record: PortalRunRecord = {
+    at: new Date().toISOString(),
+    ok,
+    summary: summary.slice(0, 400),
+  };
+  patchState({
+    settings: {
+      ...settings,
+      brityMessengerLastRun: record,
+    },
+  });
+}
 
 export function recordPortalRun(
   portalId: PortalId,

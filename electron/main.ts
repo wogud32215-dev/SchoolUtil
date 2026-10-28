@@ -32,17 +32,22 @@ import {
 import { fetchCurrentWeather, fetchWeatherForecast } from "./open-meteo";
 import { normalizeSettings } from "./settings-normalize";
 import {
+  isBrityMessengerAutomationBusy,
+  runBrityMessengerAutomation,
+} from "./brity-automation";
+import {
   getState,
   getStorePath,
   initPersistence,
   patchState,
+  recordBrityMessengerRun,
   recordPortalRun,
   replaceState,
   type AppSettings,
   type PersistedState,
 } from "./store";
 import { isDesktopForeground } from "./win32-desktop";
-import { sendWindowToDesktopBottom } from "./win32-zorder";
+import { ensureWidgetDesktopZOrder } from "./win32-zorder";
 import { isPortalId } from "./portal-ids";
 import { portalBrowserFromSettings } from "./portal-launch";
 import { schedulePortalAutoLogin } from "./portal-boot";
@@ -50,10 +55,12 @@ import {
   portalDebugHelpUrl,
   runPortalAutomation,
 } from "./portal-automation";
-import { openPortalLog } from "./portal-log";
+import { appendPortalLog, openPortalLog } from "./portal-log";
 import { applyPortalSessionExtend } from "./portal-session-extend";
 import {
+  clearBrityMessengerCredentials,
   clearPortalCredentials,
+  getBrityMessengerCredentialStatus,
   getPortalCredentialStatus,
 } from "./secrets";
 import {
@@ -159,7 +166,7 @@ function applyDesktopLayer() {
   if (!widget || pinnedToFront) {
     return;
   }
-  const ok = sendWindowToDesktopBottom(win.getNativeWindowHandle());
+  const ok = ensureWidgetDesktopZOrder(win.getNativeWindowHandle());
   if (!ok) {
     win.webContents.send("widget:desktop-layer", { ok: false });
   }
@@ -170,27 +177,99 @@ function syncWidgetDesktopLayer() {
   notifyShapeRefresh();
 }
 
-/**
- * Windows: setShape는 히트 테스트뿐 아니라 **그리기 영역도 잘라** 카드가 깨져 보일 수 있다.
- * 위젯 모드는 투명 영역 클릭 통과(forward) + setShape 비움으로 처리한다.
- */
-function applyWidgetPointerPassthrough() {
+/** 창 표시·렌더 직후 클릭 통과·Z-order가 늦게 잡히는 경우를 보정한다. */
+function scheduleWidgetStartupSync() {
+  if (!isWidgetMode() || pinnedToFront) return;
+  const delays = [0, 50, 200, 600, 1500];
+  for (const ms of delays) {
+    setTimeout(() => {
+      const win = mainWindow;
+      if (!win || win.isDestroyed() || !isWidgetMode() || pinnedToFront) {
+        return;
+      }
+      applyDesktopLayer();
+      notifyShapeRefresh();
+    }, ms);
+  }
+}
+
+type WidgetShapeRect = { x: number; y: number; width: number; height: number };
+
+const WIDGET_SHAPE_RECT_LIMIT = 80;
+
+function normalizeWidgetShapeRects(raw: unknown): WidgetShapeRect[] {
+  if (!Array.isArray(raw)) return [];
+  const out: WidgetShapeRect[] = [];
+  for (const item of raw) {
+    if (out.length >= WIDGET_SHAPE_RECT_LIMIT) break;
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const x = r.x;
+    const y = r.y;
+    const width = r.width;
+    const height = r.height;
+    if (
+      typeof x !== "number" ||
+      typeof y !== "number" ||
+      typeof width !== "number" ||
+      typeof height !== "number"
+    ) {
+      continue;
+    }
+    if (
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height)
+    ) {
+      continue;
+    }
+    if (width < 1 || height < 1) continue;
+    out.push({
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height),
+    });
+  }
+  return out;
+}
+
+/** 카드·제목줄 영역만 창 히트 영역으로 두고, 나머지는 바탕화면으로 통과시킨다. */
+function applyWidgetHitRegions(rects: WidgetShapeRect[]) {
   const win = mainWindow;
   if (!win || win.isDestroyed()) return;
-  win.setShape([]);
   if (!isWidgetMode() || pinnedToFront) {
+    win.setShape([]);
     win.setIgnoreMouseEvents(false);
     return;
   }
-  win.setIgnoreMouseEvents(true, { forward: true });
+  if (rects.length === 0) {
+    win.setShape([]);
+    win.setIgnoreMouseEvents(true, { forward: true });
+    return;
+  }
+  win.setShape(rects);
+  win.setIgnoreMouseEvents(false);
+}
+
+function applyWidgetPointerPassthrough() {
+  const win = mainWindow;
+  if (!win || win.isDestroyed()) return;
+  if (!isWidgetMode() || pinnedToFront) {
+    win.setShape([]);
+    win.setIgnoreMouseEvents(false);
+    return;
+  }
+  notifyShapeRefresh();
 }
 
 function wakeWidgetForInput() {
   const win = mainWindow;
   if (!win || win.isDestroyed() || !isWidgetMode() || pinnedToFront) return;
   if (!win.isVisible()) win.show();
-  win.focus();
   applyDesktopLayer();
+  notifyShapeRefresh();
 }
 
 function stopWidgetDesktopMonitor() {
@@ -204,6 +283,10 @@ function stopWidgetDesktopMonitor() {
 function startWidgetDesktopMonitor() {
   stopWidgetDesktopMonitor();
   if (process.platform !== "win32" || !isWidgetMode()) return;
+  if (!pinnedToFront) {
+    lastDesktopForeground = isDesktopForeground();
+    syncWidgetDesktopLayer();
+  }
   desktopMonitorTimer = setInterval(() => {
     if (!mainWindow || mainWindow.isDestroyed() || !isWidgetMode() || pinnedToFront) {
       return;
@@ -506,13 +589,24 @@ function createWindow(): BrowserWindow {
     if (widget) {
       applyWidgetWindowBounds();
     }
-    mainWindow.show();
+    if (widget && !pinnedToFront) {
+      mainWindow.showInactive();
+    } else {
+      mainWindow.show();
+    }
     if (widget && !pinnedToFront) {
       applyDesktopLayer();
+      applyWidgetHitRegions([]);
+      scheduleWidgetStartupSync();
     }
     updateWidgetDesktopMonitors();
     broadcastPinState();
     registerGlobalShortcuts();
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    if (!mainWindow || mainWindow.isDestroyed() || !isWidgetMode()) return;
+    scheduleWidgetStartupSync();
   });
 
   mainWindow.on("close", (event) => {
@@ -524,7 +618,7 @@ function createWindow(): BrowserWindow {
 
   mainWindow.on("focus", () => {
     if (isWidgetMode() && !pinnedToFront) {
-      applyDesktopLayer();
+      syncWidgetDesktopLayer();
     }
   });
 
@@ -645,6 +739,21 @@ function applyPortalSettings(settings: AppSettings): void {
     normalizeSettings(getState().settings),
   );
   schedulePortalAutoLogin(settings, async (portalId) => {
+    if (isBrityMessengerAutomationBusy()) {
+      appendPortalLog(
+        `[portal] Brity 자동 로그인이 진행 중입니다. ${portalId} 부팅 자동 로그인은 Brity가 끝난 뒤 시도합니다.`,
+      );
+      const deadline = Date.now() + 120_000;
+      while (isBrityMessengerAutomationBusy() && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+      if (isBrityMessengerAutomationBusy()) {
+        appendPortalLog(
+          `[portal] Brity 실행이 길어져 이번 부팅 자동 로그인(${portalId})을 건너뜁니다.`,
+        );
+        return;
+      }
+    }
     const s = getState().settings;
     const res = await runPortalAutomation(s, portalId);
     recordPortalRun(
@@ -653,6 +762,25 @@ function applyPortalSettings(settings: AppSettings): void {
       res.ok ? res.summary : res.error,
     );
   });
+}
+
+async function handleBrityMessengerRun() {
+  const settings = getState().settings;
+  const res = await runBrityMessengerAutomation(settings);
+  recordBrityMessengerRun(
+    res.ok,
+    res.ok ? res.summary : res.error,
+  );
+  if (!res.ok) {
+    return { ok: false as const, error: res.error };
+  }
+  return {
+    ok: true as const,
+    mode: res.mode,
+    summary: res.summary,
+    reason:
+      res.mode === "launch_only" ? ("cert_auth" as const) : undefined,
+  };
 }
 
 async function handlePortalRun(portalId: import("./portal-ids").PortalId) {
@@ -873,6 +1001,17 @@ function registerIpc() {
     },
   );
 
+  ipcMain.handle("brity:launch", async () => handleBrityMessengerRun());
+
+  ipcMain.handle("brity:credential-status", () =>
+    getBrityMessengerCredentialStatus(),
+  );
+
+  ipcMain.handle("brity:clear-credentials", () => {
+    clearBrityMessengerCredentials();
+    return { ok: true as const };
+  });
+
   ipcMain.handle("widget:get-pin", () => pinnedToFront);
 
   ipcMain.handle("widget:toggle-pin", () => {
@@ -899,8 +1038,8 @@ function registerIpc() {
     }));
   });
 
-  ipcMain.handle("widget:set-shape", () => {
-    applyWidgetPointerPassthrough();
+  ipcMain.handle("widget:set-shape", (_event, rects: unknown) => {
+    applyWidgetHitRegions(normalizeWidgetShapeRects(rects));
   });
 
   ipcMain.handle("widget:fit-screen", () => {

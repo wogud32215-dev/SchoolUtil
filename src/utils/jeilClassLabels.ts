@@ -1,3 +1,5 @@
+import type { ComciganClassLabelMode } from "@/types/state";
+
 /** 제일고(농업계) 학급 번호 → 학과 약칭·반 (1~3학년 동일 학급 체계) */
 const CLASS_DEPT: ReadonlyArray<{ abbrev: string; seq: number }> = [
   { abbrev: "농토", seq: 1 },
@@ -44,6 +46,13 @@ export function parseClassCode(classCode: string): ParsedClassCode | null {
   return null;
 }
 
+/** 일반고: 컴시간 학급 코드 → N학년 M반 */
+export function formatGeneralClassLabel(classCode: string): string | null {
+  const parsed = parseClassCode(classCode);
+  if (!parsed) return null;
+  return `${parsed.grade}학년 ${parsed.classNum}반`;
+}
+
 /** 예: 204 / 2-4 → 2기계1반 */
 export function formatJeilClassLabel(classCode: string): string | null {
   const parsed = parseClassCode(classCode);
@@ -54,40 +63,60 @@ export function formatJeilClassLabel(classCode: string): string | null {
   return `${grade}${dept.abbrev}${dept.seq}반`;
 }
 
-/** 표시용: 매핑되면 학과 반명, 아니면 원문 */
-export function formatClassCodeDisplay(classCode: string): string {
-  const label = formatJeilClassLabel(classCode);
+function classLabelForMode(
+  classCode: string,
+  mode: ComciganClassLabelMode,
+): string | null {
+  if (mode === "jeil") {
+    return formatJeilClassLabel(classCode);
+  }
+  return formatGeneralClassLabel(classCode);
+}
+
+/** 표시용: 모드에 맞는 반명, 아니면 원문 */
+export function formatClassCodeDisplay(
+  classCode: string,
+  mode: ComciganClassLabelMode = "jeil",
+): string {
+  const label = classLabelForMode(classCode, mode);
   if (label) return label;
   const trimmed = classCode.trim();
   return trimmed;
 }
 
-/** 칩·목록: 학과 반명 + 과목 */
+/** 칩·목록: 반명 + 과목 */
 export function formatLessonForDisplay(
   classCode: string,
   subject: string,
+  mode: ComciganClassLabelMode = "jeil",
 ): string {
   const sub = subject.trim();
   const code = classCode.trim();
   if (!code) return sub;
-  const label = formatClassCodeDisplay(code);
+  const label = formatClassCodeDisplay(code, mode);
   return sub ? `${label} ${sub}` : label;
 }
 
 const CELL_SUFFIX_RE =
   /\s*(\((?:교체·원:[^)]*|교체|빠짐)[^)]*\))\s*$/;
 
-function formatCompactLessonToken(token: string): string {
+function formatCompactLessonToken(
+  token: string,
+  mode: ComciganClassLabelMode,
+): string {
   const m = token.match(/^(\d{2,3})(.*)$/);
   if (!m) return token;
-  const label = formatJeilClassLabel(m[1]);
+  const label = classLabelForMode(m[1], mode);
   if (!label) return token;
   const rest = m[2].trim();
   return rest ? `${label} ${rest}` : label;
 }
 
 /** 그리드 셀 문자열 (예: 213역학, 204물리 (교체·원:…)) */
-export function formatTimetableCellText(cell: string): string {
+export function formatTimetableCellText(
+  cell: string,
+  mode: ComciganClassLabelMode = "jeil",
+): string {
   const trimmed = cell.trim();
   if (!trimmed) return trimmed;
 
@@ -97,6 +126,6 @@ export function formatTimetableCellText(cell: string): string {
     ? trimmed.slice(0, suffixMatch.index).trim()
     : trimmed;
 
-  const parts = main.split(/\s+/).map(formatCompactLessonToken);
+  const parts = main.split(/\s+/).map((t) => formatCompactLessonToken(t, mode));
   return `${parts.join(" ")}${suffix}`;
 }

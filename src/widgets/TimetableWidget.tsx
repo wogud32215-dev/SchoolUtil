@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { ComciganTimetableGrid } from "@/components/ComciganTimetableGrid";
 import { TimetableManualCellEditor } from "@/components/TimetableManualCellEditor";
-import type { TimetableData, TimetableManualScope } from "@/types/state";
+import type {
+  ComciganClassLabelMode,
+  TimetableData,
+  TimetableManualScope,
+} from "@/types/state";
 import { hasComciganView } from "@/utils/comciganTimetable";
 import { formatTimetableCellText } from "@/utils/jeilClassLabels";
 import { emptyGrid, normalizeTimetable } from "@/utils/timetable";
@@ -19,6 +23,7 @@ type Props = {
   data: TimetableData;
   onChange: (data: TimetableData) => void;
   autoSync?: boolean;
+  comciganClassLabelMode?: ComciganClassLabelMode;
 };
 
 type ManualEditorState = {
@@ -32,7 +37,12 @@ function weekdayIndex(): number {
   return (new Date().getDay() + 6) % 7;
 }
 
-export function TimetableWidget({ data, onChange, autoSync }: Props) {
+export function TimetableWidget({
+  data,
+  onChange,
+  autoSync,
+  comciganClassLabelMode = "jeil",
+}: Props) {
   const tt = normalizeTimetable(data);
   const displayTt = useMemo(() => buildTimetableForDisplay(tt), [tt]);
   const [edit, setEdit] = useState(false);
@@ -51,6 +61,7 @@ export function TimetableWidget({ data, onChange, autoSync }: Props) {
         <ComciganTimetableGrid
           periodCount={displayTt.periodCount}
           view={displayTt.comciganView}
+          classLabelMode={comciganClassLabelMode}
           todayDayIndex={highlightToday ? todayIdx : -1}
           onManualCellClick={(dayIndex, periodIndex) => {
             const existing = resolveManualSlotAt(tt, dayIndex, periodIndex);
@@ -132,7 +143,9 @@ export function TimetableWidget({ data, onChange, autoSync }: Props) {
     if (todayIdx > 4) return "주말";
     const line = tt.grid[todayIdx]
       .map((s, i) =>
-        s.trim() ? `${i + 1} ${formatTimetableCellText(s.trim())}` : null,
+        s.trim()
+          ? `${i + 1} ${formatTimetableCellText(s.trim(), comciganClassLabelMode)}`
+          : null,
       )
       .filter(Boolean)
       .join(" · ");

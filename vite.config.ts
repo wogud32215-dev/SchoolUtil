@@ -9,6 +9,15 @@ function copyPortalUiaScripts(): Plugin {
   const pairs = [
     ["electron/portal-cert-uia.ps1", "dist-electron/portal-cert-uia.ps1"],
     ["electron/portal-edufine-uia.ps1", "dist-electron/portal-edufine-uia.ps1"],
+    [
+      "electron/brity-messenger-uia.ps1",
+      "dist-electron/brity-messenger-uia.ps1",
+    ],
+    ["electron/brity-cert-uia.ps1", "dist-electron/brity-cert-uia.ps1"],
+    [
+      "electron/brity-gov-cert-login-uia.ps1",
+      "dist-electron/brity-gov-cert-login-uia.ps1",
+    ],
   ];
   return {
     name: "copy-portal-uia-scripts",

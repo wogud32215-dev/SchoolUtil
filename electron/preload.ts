@@ -37,6 +37,22 @@ const api = {
   openPortalLog: () => ipcRenderer.invoke("portal:open-log"),
   getPortalDebugHelpUrl: () =>
     ipcRenderer.invoke("portal:debug-help-url") as Promise<{ url: string }>,
+  launchBrityMessenger: () =>
+    ipcRenderer.invoke("brity:launch") as Promise<
+      | {
+          ok: true;
+          mode: "launch_only" | "automation";
+          summary?: string;
+          reason?: "cert_auth";
+        }
+      | { ok: false; error: string }
+    >,
+  getBrityCredentialStatus: () =>
+    ipcRenderer.invoke("brity:credential-status") as Promise<{
+      hasPassword: boolean;
+    }>,
+  clearBrityCredentials: () =>
+    ipcRenderer.invoke("brity:clear-credentials") as Promise<{ ok: boolean }>,
   fetchNeisSchedule: (range?: { fromYmd?: string; toYmd?: string }) =>
     ipcRenderer.invoke("neis:schedule", range ?? {}),
   fetchNeisMeal: (range?: { fromYmd?: string; toYmd?: string }) =>

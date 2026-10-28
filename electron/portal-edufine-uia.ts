@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type EdufineUiaClickResult =
-  | { ok: true; windowTitle: string }
+  | { ok: true; windowTitle: string; buttonName?: string }
   | { ok: false; reason: string };
 
 function resolveScriptPath(): string {
@@ -14,18 +14,25 @@ function resolveScriptPath(): string {
   return path.join(dir, "..", "electron", "portal-edufine-uia.ps1");
 }
 
-/** Nexacro 화면에서 CDP로 단추를 못 찾을 때 UI Automation으로 인증서 로그인을 누릅니다. */
-export async function tryEdufineCertLoginViaUia(): Promise<EdufineUiaClickResult> {
+function runEdufineUiaScript(
+  anyWindow: boolean,
+): Promise<EdufineUiaClickResult> {
   const scriptPath = resolveScriptPath();
   if (!fs.existsSync(scriptPath)) {
-    return { ok: false, reason: "portal-edufine-uia.ps1 없음" };
+    return Promise.resolve({ ok: false, reason: "portal-edufine-uia.ps1 없음" });
   }
 
   return new Promise((resolve) => {
     const ps = spawn(
       "powershell.exe",
       ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Sta", "-File", scriptPath],
-      { windowsHide: true },
+      {
+        windowsHide: true,
+        env: {
+          ...process.env,
+          SCHOOLUTIL_ANY_WINDOW: anyWindow ? "1" : "0",
+        },
+      },
     );
 
     let stdout = "";
@@ -49,11 +56,17 @@ export async function tryEdufineCertLoginViaUia(): Promise<EdufineUiaClickResult
         .find((s) => s.startsWith("{"));
       if (code === 0 && line) {
         try {
-          const data = JSON.parse(line) as { clicked?: boolean; title?: string };
+          const data = JSON.parse(line) as {
+            clicked?: boolean;
+            title?: string;
+            buttonName?: string;
+          };
           if (data.clicked) {
+            const buttonName = String(data.buttonName ?? "").trim();
             resolve({
               ok: true,
               windowTitle: String(data.title ?? ""),
+              ...(buttonName ? { buttonName } : {}),
             });
             return;
           }
@@ -68,4 +81,14 @@ export async function tryEdufineCertLoginViaUia(): Promise<EdufineUiaClickResult
       });
     });
   });
+}
+
+/** Nexacro 화면에서 CDP로 단추를 못 찾을 때 UI Automation으로 인증서 로그인을 누릅니다. */
+export async function tryEdufineCertLoginViaUia(): Promise<EdufineUiaClickResult> {
+  return runEdufineUiaScript(false);
+}
+
+/** Brity 등 — 모든 창에서 «교육행정 전자서명 인증서 로그인» 단추를 찾습니다. */
+export async function tryGovCertLoginViaUiaForAnyWindow(): Promise<EdufineUiaClickResult> {
+  return runEdufineUiaScript(true);
 }

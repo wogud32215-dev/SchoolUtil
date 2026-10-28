@@ -110,6 +110,7 @@ function renderWidgetBody(
           data={state.timetable}
           onChange={(timetable) => void patch({ timetable })}
           autoSync={state.settings.timetableAutoSync}
+          comciganClassLabelMode={state.settings.comciganClassLabelMode}
         />
       );
     case "schoolsched":
@@ -299,7 +300,7 @@ export default function App() {
     return toGridLayout(activeIds, merged);
   }, [state, activeIds]);
 
-  const displayMode = state?.settings.displayMode ?? "window";
+  const displayMode = state?.settings.displayMode ?? "widget";
   const widgetMode = displayMode === "widget";
 
   useEffect(() => {
@@ -441,7 +442,10 @@ export default function App() {
 
   if (!ready || !state) {
     return (
-      <div className="app-shell" style={{ padding: 24 }}>
+      <div
+        className={`app-shell${widgetMode ? " widget-mode" : ""}`}
+        style={{ padding: 24 }}
+      >
         불러오는 중…
       </div>
     );
@@ -552,7 +556,8 @@ export default function App() {
           onDragStop={onGridInteractionEnd}
           onResize={scheduleWindowShapeUpdate}
           onResizeStop={onGridInteractionEnd}
-          draggableHandle=".widget-header, .meal-widget-head"
+          draggableHandle=".widget-header, .meal-widget-drag"
+          draggableCancel=".meal-nav, .meal-nav button"
           compactType="vertical"
         >
           {activeIds.map((id) => (
@@ -620,6 +625,7 @@ export default function App() {
       <ComciganSubstituteModal
         open={substituteAlertOpen}
         timetable={state.timetable}
+        classLabelMode={state.settings.comciganClassLabelMode}
         onClose={() => void dismissSubstituteAlert()}
       />
     </div>

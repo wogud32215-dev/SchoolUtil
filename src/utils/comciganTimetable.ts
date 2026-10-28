@@ -1,9 +1,14 @@
 import type {
+  ComciganClassLabelMode,
   ComciganLessonChip,
   ComciganTimetableView,
   TimetableData,
 } from "@/types/state";
-import { formatJeilClassLabel } from "@/utils/jeilClassLabels";
+import {
+  formatClassCodeDisplay,
+  formatGeneralClassLabel,
+  formatJeilClassLabel,
+} from "@/utils/jeilClassLabels";
 import { TIMETABLE_DAY_LABELS } from "@/utils/timetableSubstitute";
 
 export function dayOfMonthFromYmd(ymd: string): number {
@@ -28,9 +33,19 @@ export function formatSubstituteWhen(
   return `${monthDay} (${day}) · ${period}교시${time}`;
 }
 
-export function classCodeToGradeClass(classCode: string): string {
-  const jeil = formatJeilClassLabel(classCode);
-  if (jeil) return jeil;
+export function classCodeToGradeClass(
+  classCode: string,
+  mode: ComciganClassLabelMode = "jeil",
+): string {
+  if (mode === "jeil") {
+    const jeil = formatJeilClassLabel(classCode);
+    if (jeil) return jeil;
+  } else {
+    const general = formatGeneralClassLabel(classCode);
+    if (general) return general;
+  }
+  const display = formatClassCodeDisplay(classCode, mode);
+  if (display) return display;
   const n = Number(classCode);
   if (!Number.isFinite(n) || n < 100) return classCode;
   const grade = Math.floor(n / 100);
