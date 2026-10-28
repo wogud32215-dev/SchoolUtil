@@ -104,7 +104,7 @@ export function DesignSettingsSection({ settings, onDesignSave }: Props) {
   const themeDefaultOpacity = themeDefaultCardOpacity(settings.theme);
 
   return (
-    <section className="settings-tab-pane" aria-label="디자인">
+    <section className="settings-tab-pane" aria-label="테마">
       <div className="settings-peek-banner">
         <button
           type="button"

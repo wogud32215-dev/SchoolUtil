@@ -293,7 +293,7 @@ export function TodayGlanceModal({
           </button>
         </footer>
         <p className="today-glance-hint">
-          설정 → 위젯 탭 «제일 메이트»에서 다시 켤 수 있습니다.
+          설정 → 카드 탭 «제일 메이트»에서 다시 켤 수 있습니다.
         </p>
       </div>
     </div>

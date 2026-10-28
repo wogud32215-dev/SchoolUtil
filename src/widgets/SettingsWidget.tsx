@@ -13,12 +13,16 @@ import { DesignSettingsSection } from "@/components/DesignSettingsSection";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
 import { SettingsSwitch } from "@/components/settings/SettingsSwitch";
+import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
 import {
   SettingsToggleChip,
   SettingsToggleChipGrid,
 } from "@/components/settings/SettingsToggleChip";
 import { SettingsTabNav } from "@/components/settings/SettingsTabNav";
-import type { SettingsTabId } from "@/components/settings/settingsTabs";
+import {
+  labelForSettingsTab,
+  type SettingsTabId,
+} from "@/components/settings/settingsTabs";
 import { DataBackupPanel } from "@/widgets/DataBackupPanel";
 import { useNeisKeyStatus } from "@/hooks/useNeisKeyStatus";
 import { NeisAppKeyAdminPanel } from "@/widgets/NeisAppKeyAdminPanel";
@@ -244,7 +248,9 @@ export function SettingsWidget({
 
   return (
     <div className="settings-panel settings-panel--tabbed">
-      <SettingsTabNav active={tab} onChange={setTab} />
+      <div className="settings-tab-nav-wrap">
+        <SettingsTabNav active={tab} onChange={setTab} />
+      </div>
 
       <div className="settings-tab-scroll">
         {tab === "design" && (
@@ -252,7 +258,10 @@ export function SettingsWidget({
         )}
 
         {tab === "widget" && (
-          <section className="settings-tab-pane" aria-label="위젯">
+          <section
+            className="settings-tab-pane"
+            aria-label={labelForSettingsTab("widget")}
+          >
             <SettingsRow
               title="제일 메이트"
               hint="앱을 켜면 하루 한 번(약 5초 후) 모아 보여 줍니다. 내용이 없으면 안내 문구만 나옵니다."
@@ -367,16 +376,17 @@ export function SettingsWidget({
         )}
 
         {tab === "screen" && (
-          <section className="settings-tab-pane" aria-label="화면">
+          <section
+            className="settings-tab-pane"
+            aria-label={labelForSettingsTab("screen")}
+          >
             <SettingsRow title="시작 프로그램">
-              <label className="settings-check-line">
-                <input
-                  type="checkbox"
-                  checked={draft.openAtLogin}
-                  onChange={(e) => patch({ openAtLogin: e.target.checked })}
-                />
+              <SettingsCheckbox
+                checked={draft.openAtLogin}
+                onChange={(v) => patch({ openAtLogin: v })}
+              >
                 Windows 시작 시 SchoolUtil 실행
-              </label>
+              </SettingsCheckbox>
             </SettingsRow>
 
             <SettingsRow
@@ -477,20 +487,21 @@ export function SettingsWidget({
               title="단축키"
               hint="숨기기·맨 앞 보기 Ctrl+Alt+D · 비상 탈출 Ctrl+Alt+Shift+D"
             >
-              <label className="settings-check-line">
-                <input
-                  type="checkbox"
-                  checked={draft.globalShortcuts}
-                  onChange={(e) => patch({ globalShortcuts: e.target.checked })}
-                />
+              <SettingsCheckbox
+                checked={draft.globalShortcuts}
+                onChange={(v) => patch({ globalShortcuts: v })}
+              >
                 전역 단축키 사용 (다른 앱 위에서도 동작)
-              </label>
+              </SettingsCheckbox>
             </SettingsRow>
           </section>
         )}
 
         {tab === "school" && (
-          <section className="settings-tab-pane" aria-label="학교">
+          <section
+            className="settings-tab-pane"
+            aria-label={labelForSettingsTab("school")}
+          >
             {neisKeyStatus?.hasAppKey && (
               <p className="muted" style={{ margin: "0 0 12px" }}>
                 급식·학사일정은 앱에 연결된 NEIS 키로 불러옵니다. 학교만 검색해
@@ -625,7 +636,10 @@ export function SettingsWidget({
         )}
 
         {tab === "data" && (
-          <section className="settings-tab-pane" aria-label="데이터">
+          <section
+            className="settings-tab-pane"
+            aria-label={labelForSettingsTab("data")}
+          >
             <SettingsRow
               title="백업 · 업데이트"
               hint="위 안내를 확인한 뒤 보내기·불러오기를 사용하세요."
@@ -639,7 +653,10 @@ export function SettingsWidget({
         )}
 
         {tab === "portal" && (
-          <section className="settings-tab-pane settings-tab-pane--portal" aria-label="업무포털">
+          <section
+            className="settings-tab-pane settings-tab-pane--portal"
+            aria-label={labelForSettingsTab("portal")}
+          >
             <WorkPortalSettingsSection
               draft={draft}
               onPatch={(p) => patch(p)}
@@ -651,7 +668,10 @@ export function SettingsWidget({
         )}
 
         {tab === "help" && (
-          <section className="settings-tab-pane" aria-label="도움말">
+          <section
+            className="settings-tab-pane"
+            aria-label={labelForSettingsTab("help")}
+          >
             <SettingsRow title="단축키">
               <ul className="settings-help-list">
                 <li><kbd>Ctrl+Alt+D</kbd> — 위젯 숨기기 / 다시 맨 앞에 보기</li>
@@ -711,7 +731,7 @@ export function SettingsWidget({
         </div>
         {!dirty && !savedHint && tab !== "design" && (
           <p className="settings-footnote">
-            디자인 탭의 색·질감은 누르면 바로 저장됩니다. 그 외 항목은 «설정 저장»을
+            테마 탭의 색·질감은 누르면 바로 저장됩니다. 그 외 항목은 «설정 저장»을
             눌러야 반영됩니다.
           </p>
         )}

@@ -51,6 +51,7 @@
     "electron-builder": "^25.1.8",
     "png-to-ico": "^2.1.8",
     "pngjs": "^7.0.0",
+    "rcedit": "^4.0.1",
     "rimraf": "^6.0.1",
     "typescript": "~5.7.2",
     "vite": "^6.0.6",
@@ -60,6 +61,7 @@
   "build": {
     "appId": "com.schoolutil.app",
     "productName": "SchoolUtil",
+    "afterPack": "./scripts/after-pack.mjs",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -76,7 +78,7 @@
     ],
     "artifactName": "${productName}-Setup-${version}.${ext}",
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "icon.ico",
       "signAndEditExecutable": false,
       "target": [
         {
@@ -91,7 +93,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "include": "installer.nsh"
     },
     "publish": {
       "provider": "github",

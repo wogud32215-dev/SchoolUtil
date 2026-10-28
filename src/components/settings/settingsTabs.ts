@@ -13,11 +13,16 @@ export type SettingsTabDef = {
 };
 
 export const SETTINGS_TABS: SettingsTabDef[] = [
-  { id: "design", label: "디자인" },
-  { id: "widget", label: "위젯" },
-  { id: "screen", label: "화면" },
-  { id: "school", label: "학교" },
-  { id: "data", label: "데이터" },
-  { id: "portal", label: "업무포털" },
-  { id: "help", label: "도움말" },
+  { id: "design", label: "테마" },
+  { id: "widget", label: "카드" },
+  { id: "screen", label: "표시" },
+  { id: "school", label: "학교 연동" },
+  { id: "data", label: "백업" },
+  { id: "portal", label: "포털" },
+  { id: "help", label: "안내" },
 ];
+
+export function labelForSettingsTab(id: SettingsTabId): string {
+  const tab = SETTINGS_TABS.find((t) => t.id === id);
+  return tab?.label ?? id;
+}

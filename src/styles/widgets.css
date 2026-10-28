@@ -2659,8 +2659,12 @@
   flex-wrap: wrap;
 }
 
-.portal-settings-toggle {
-  font-size: 0.85rem;
+.portal-settings-block > .settings-checkbox {
+  margin-top: 8px;
+}
+
+.portal-settings-advanced .settings-checkbox {
+  margin-top: 10px;
 }
 
 .portal-settings-last {
@@ -2675,9 +2679,30 @@
   margin-top: 4px;
 }
 
+.settings-modal .portal-settings-actions .btn-primary {
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--accent) 88%, #fff 5%) 0%,
+    color-mix(in srgb, var(--accent) 72%, #000 8%) 100%
+  );
+  box-shadow:
+    0 2px 0 color-mix(in srgb, var(--accent) 45%, #000),
+    0 4px 10px color-mix(in srgb, var(--accent) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.settings-modal .portal-settings-actions .btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(15, 23, 42, 0.18),
+    0 1px 0 color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
 .portal-settings-actions .btn-primary {
-  padding: 4px 10px;
+  padding: 6px 12px;
   font-size: 0.85rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .portal-settings-advanced {

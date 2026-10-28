@@ -35,6 +35,7 @@ import {
   isBrityMessengerAutomationBusy,
   runBrityMessengerAutomation,
 } from "./brity-automation";
+import { applyInstallerOpenAtLoginFlag } from "./installer-pending";
 import {
   getState,
   getStorePath,
@@ -1213,6 +1214,7 @@ app.on("second-instance", () => {
 
 app.whenReady().then(() => {
   initPersistence();
+  applyInstallerOpenAtLoginFlag();
   registerIpc();
   attachDisplayListeners();
   createWindow();

@@ -120,7 +120,7 @@ async function launchBrowserWithDebug(
   }
 
   throw new Error(
-    "원격 디버깅에 연결하지 못했습니다. Chrome·Edge를 모두 종료한 뒤 다시 «지금 한 번 해 보기»를 눌러 보세요. 계속 실패하면 chrome://inspect/#remote-debugging에서 «Allow remote debugging for this browser instance»를 켠 평소 브라우저를 사용하거나, URL만 열기 모드를 쓰세요.",
+    "원격 디버깅에 연결하지 못했습니다. Chrome·Edge를 모두 종료한 뒤 다시 «테스트해 보기»를 눌러 보세요. 계속 실패하면 chrome://inspect/#remote-debugging에서 «Allow remote debugging for this browser instance»를 켠 평소 브라우저를 사용하거나, URL만 열기 모드를 쓰세요.",
   );
 }
 

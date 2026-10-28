@@ -1,13 +1,13 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 0.5.0**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.0**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-0.4.0.exe`
+파일 이름 예: `SchoolUtil-Setup-1.0.0.exe`
 
-설치 후 **설정** 카드에서 «데이터 백업 · 업데이트 (설치 버전 …)»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
+설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
 
 ## Git
 
@@ -82,7 +82,7 @@ npm run typecheck
 npm run dist
 ```
 
-`release/` 폴더에 NSIS 설치 프로그램(예: `SchoolUtil-Setup-0.4.0.exe`)과 자동 업데이트용 `latest.yml`이 생성됩니다.
+`release/` 폴더에 NSIS 설치 프로그램(예: `SchoolUtil-Setup-1.0.0.exe`)과 자동 업데이트용 `latest.yml`이 생성됩니다.
 
 설치만 빠르게 확인하려면:
 
@@ -130,9 +130,9 @@ npm run dist
 3. **태그 = `v` + version** (Release 워크플로가 `package.json`과 일치하는지 검사합니다).
 
 ```bash
-git tag v0.4.1
+git tag v1.0.1
 git push origin main
-git push origin v0.4.1
+git push origin v1.0.1
 ```
 
 4. [Actions → Release](https://github.com/wogud32215-dev/SchoolUtil/actions)가 성공하면 [Releases](https://github.com/wogud32215-dev/SchoolUtil/releases)에 설치 파일이 생깁니다.
@@ -143,12 +143,12 @@ git push origin v0.4.1
 
 | 단계 | 확인 내용 |
 |------|-----------|
-| **신규 설치** | Releases의 Setup exe 실행 → 설정에 «설치 버전 0.4.0» 표시 |
+| **신규 설치** | Releases의 Setup exe 실행 → 설정에 «설치 버전 1.0.0» 표시 |
 | **덮어쓰기** | 같은 `appId`로 새 Setup을 다시 실행 → `%APPDATA%\SchoolUtil\schoolutil-data.json` 유지 |
 | **업데이트 없음** | 설치판에서 **업데이트 확인** → «현재 최신 버전입니다.» |
 | **업데이트 있음** | 더 높은 버전을 Releases에 올린 뒤 **업데이트 확인** → 다운로드·재시작 안내 |
 
-업데이트 경로를 테스트하려면: PC에 **0.4.0** 설치 → 저장소에서 **0.4.1** 릴리스 후 앱에서 업데이트 확인.
+업데이트 경로를 테스트하려면: PC에 **1.0.0** 설치 → 저장소에서 **1.0.1** 릴리스 후 앱에서 업데이트 확인.
 
 개발 모드(`npm run dev`)에서는 업데이트 확인이 거부됩니다 (설치판만 해당).
 
@@ -192,29 +192,46 @@ npm run dist
 
 `appId`(`com.schoolutil.app`)와 store 이름(`schoolutil-data`)을 바꾸지 않으면 재설치 후에도 데이터가 유지됩니다.
 
-## 기능 (0.5.0)
+## 기능 (1.0.0)
 
-- **업무포털**: 나이스·에듀파인 — URL만 열기(기본) 또는 설정에서 «자동 로그인 시도»(Chrome/Edge CDP POC, 인증서 OS 입력은 실험·opt-in). `portal.log`·마지막 실행 결과·교육청 프리셋
-- **업무포털 자격 증명**: 아이디·비밀번호는 `safeStorage`·`schoolutil-secrets.json`에만 저장 (데이터·백업 JSON에는 없음)
+### 대시보드 · UI
 
-## 기능 (0.4.0)
+- **위젯**: 시계, 날씨, 급식, 달력, D-Day, 메모, 할 일, 시간표, 학사일정, 업무포털 — 설정에서 카드 켜기/끄기 (설정 UI는 그리드가 아니라 **하단 독·모달**)
+- **반응형 배치** · 드래그로 위치 조정 · 레이아웃 프리셋(벤토, 클래식, 달력/시간표 중심, 간결, 와이드)
+- **테마·글꼴·밀도·카드 투명도** · 시작 프로그램 등록
+- **«제일 메이트»**: 실행 시 하루 한 번 오늘 할 일·시간표·급식 등 요약 모달 (설정에서 on/off)
 
-- **학교 검색**: 설정에서 NEIS `schoolInfo` API로 학교 선택 → 교육청·학교 코드 자동 입력
-- **데이터 백업**: 저장 시 `%APPDATA%\\SchoolUtil`에 자동 백업 · 설정에서 JSON 보내기/불러오기
-- **NEIS API 키**: Windows `safeStorage`로 암호화 저장 (기존 평문은 첫 실행 시 이전)
-- **자동 업데이트**: 설치판 `electron-updater` — GitHub Releases(기본) 또는 generic URL · 설정에서 업데이트 확인
+### 창 · 트레이 · 위젯 모드
 
-## 기능 (0.3.0)
-
-- **위젯 11종**: 시계, 날씨, 급식, 달력, D-Day, 메모, 할 일, 시간표, 학사일정, 업무포털, 설정 — 설정에서 카드 켜기/끄기
-- **반응형 배치**: 창 너비에 맞춰 그리드가 늘어납니다
-- **위젯 모드**: 설정에서 «위젯 (바탕화면에 얹기)» — 투명 배경, 카드 영역만 클릭, Win32로 바탕화면 아래 배치 시도
+- **일반 창** / **위젯 모드**(바탕화면에 얹기): 투명 배경, 카드 영역만 클릭, Win32로 바탕화면 아래 배치 시도 (Win+D와 완전 동기는 아님)
 - **앞으로 보기**: Ctrl+Alt+D (트레이 더블클릭) · **비상 탈출**: Ctrl+Alt+Shift+D
-- **할 일**: 마감일·분류(수업/담임/행정), 미완료 우선 정렬
-- **시간표**: 월~금 · 교시별 **수동 입력**, 오늘 요약
-- **학사일정**: [나이스 Open API](https://open.neis.go.kr/) `SchoolSchedule` (이번 달 자동 조회)
-- 설정: NEIS 키·학교 코드, 테마, 시작 프로그램
-- 트레이 · 위젯 드래그 배치
+- 창 닫기 → **트레이** 유지, 트레이 «종료»로만 완전 종료
+
+### 할 일 · 메모 · 달력 · 시간표
+
+- **할 일**: 마감일·분류(수업/담임/행정 등), 미완료 우선 정렬
+- **메모** · **D-Day** · **달력 일정**
+- **시간표**: 월~금 교시별 수동 입력, 오늘 요약
+- **컴시간 연동**(설정에서 켜기): 교체 수업 반영 시간표 · 수동 칸 보정 (학교·환경에 따라 동작)
+
+### NEIS · 날씨
+
+- **학교 검색**: NEIS `schoolInfo`로 학교 선택 → 교육청·학교 코드 자동 입력
+- **학사일정** · **급식**: [나이스 Open API](https://open.neis.go.kr/) (이번 달·오늘)
+- **NEIS API 키**: Windows `safeStorage` 암호화 (평문 JSON은 첫 실행 시 이전). 빌드 시 `config/neis-shared.key`를 넣으면 설치본에 **공용 키** 포함 가능 (GitHub Actions 기본 빌드에는 없음)
+- **날씨**: Open-Meteo (기본 서울, 설정에서 좌표·라벨)
+
+### 데이터 · 업데이트
+
+- **저장**: `%APPDATA%\SchoolUtil\schoolutil-data.json` · 저장 시 자동 백업
+- **JSON 보내기/불러오기** (구버전·필드 누락 데이터도 느슨하게 복원)
+- **자동 업데이트**: 설치판 `electron-updater` — GitHub Releases(기본) · 설정에서 업데이트 확인
+
+### 업무포털 · Brity (고급)
+
+- **업무포털**: 나이스·에듀파인·교육청 업무포털 — 기본 **URL만 열기**; 설정 «자동 로그인 시도»는 Chrome/Edge CDP **POC** (인증서 OS 입력은 실험·opt-in). `portal.log`·마지막 실행 결과
+- **자격 증명**: `safeStorage`·`schoolutil-secrets.json`만 (데이터·백업 JSON에는 없음)
+- **Brity 메신저**(설정에서 켜기): exe 경로·인증서 라벨 등 opt-in
 
 ## NEIS API
 

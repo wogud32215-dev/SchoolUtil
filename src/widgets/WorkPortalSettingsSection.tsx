@@ -11,6 +11,7 @@ import {
   portalLabel,
   portalLastRun,
 } from "@/utils/portalSettings";
+import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
 
 const PORTALS = PORTAL_IDS_ORDER.map((id) => ({ id, label: portalLabel(id) }));
 
@@ -173,7 +174,7 @@ export function WorkPortalSettingsSection({
   return (
     <>
       <p className="muted" style={{ margin: 0 }}>
-        업무포털
+        포털 로그인
       </p>
       <p className="muted" style={{ margin: "4px 0 0", fontSize: "0.8rem" }}>
         기본은 <strong>URL만 열기</strong>입니다. 브라우저에서 공동인증서로
@@ -229,16 +230,13 @@ export function WorkPortalSettingsSection({
         <div key={p.id} className="portal-settings-block">
           <div className="portal-settings-block-head">
             <strong>{p.label}</strong>
-            <label className="portal-settings-toggle">
-              <input
-                type="checkbox"
-                checked={draft.portals[p.id].enabled}
-                onChange={(e) =>
-                  patchPortal(p.id, { enabled: e.target.checked })
-                }
-              />
+            <SettingsCheckbox
+              className="portal-settings-toggle"
+              checked={draft.portals[p.id].enabled}
+              onChange={(v) => patchPortal(p.id, { enabled: v })}
+            >
               카드에 표시
-            </label>
+            </SettingsCheckbox>
           </div>
           {formatLastRun(portalLastRun(draft, p.id)) ? (
             <p className="muted portal-settings-last">
@@ -289,7 +287,7 @@ export function WorkPortalSettingsSection({
               disabled={busy}
               onClick={() => void tryNow(p.id)}
             >
-              지금 한 번 해 보기
+              테스트해 보기
             </button>
             {(credStatus[p.id].hasUser || credStatus[p.id].hasPassword) && (
               <button
@@ -307,16 +305,13 @@ export function WorkPortalSettingsSection({
       <div className="portal-settings-block">
         <div className="portal-settings-block-head">
           <strong>Brity 메신저 (앱)</strong>
-          <label className="portal-settings-toggle">
-            <input
-              type="checkbox"
-              checked={draft.brityMessengerEnabled}
-              onChange={(e) =>
-                onPatch({ brityMessengerEnabled: e.target.checked })
-              }
-            />
+          <SettingsCheckbox
+            className="portal-settings-toggle"
+            checked={draft.brityMessengerEnabled}
+            onChange={(v) => onPatch({ brityMessengerEnabled: v })}
+          >
             카드에 표시
-          </label>
+          </SettingsCheckbox>
         </div>
         {formatLastRun(draft.brityMessengerLastRun) ? (
           <p className="muted portal-settings-last">
@@ -328,14 +323,12 @@ export function WorkPortalSettingsSection({
           선택·«로그인» 클릭 후 K-Sign 등 OS 창에 암호를 넣습니다. 인증서
           목록 선택은 수동입니다.
         </p>
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.portalOsCertInput}
-            onChange={(e) => onPatch({ portalOsCertInput: e.target.checked })}
-          />
+        <SettingsCheckbox
+          checked={draft.portalOsCertInput}
+          onChange={(v) => onPatch({ portalOsCertInput: v })}
+        >
           인증서 비밀번호 OS 창 자동 입력 (실험, Brity·업무포털 공용)
-        </label>
+        </SettingsCheckbox>
         <label>
           설치 폴더 또는 실행 파일 (비우면 C:\BrityWorks\BrityMessenger 등 탐색)
           <input
@@ -348,16 +341,14 @@ export function WorkPortalSettingsSection({
             }
           />
         </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.brityMessengerShareGoeCredentials}
-            onChange={(e) =>
-              onPatch({ brityMessengerShareGoeCredentials: e.target.checked })
-            }
-          />
+        <SettingsCheckbox
+          checked={draft.brityMessengerShareGoeCredentials}
+          onChange={(v) =>
+            onPatch({ brityMessengerShareGoeCredentials: v })
+          }
+        >
           경기 업무포털과 같은 인증서 정보 사용
-        </label>
+        </SettingsCheckbox>
         <label>
           인증서 표시 이름 (목록에서 직접 고를 때 참고)
           <input
@@ -395,7 +386,7 @@ export function WorkPortalSettingsSection({
             disabled={busy || !draft.brityMessengerEnabled}
             onClick={() => void tryBrityNow()}
           >
-            지금 한 번 해 보기
+            테스트해 보기
           </button>
           {!draft.brityMessengerShareGoeCredentials &&
           (brityHasPassword || draft.brityMessengerPassword) ? (
@@ -416,14 +407,12 @@ export function WorkPortalSettingsSection({
           Chrome/Edge CDP·인증서 OS 입력은 POC입니다. 공동인증서 자동 로그인을
           보장하지 않습니다.
         </p>
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.portalAutoLogin}
-            onChange={(e) => onPatch({ portalAutoLogin: e.target.checked })}
-          />
+        <SettingsCheckbox
+          checked={draft.portalAutoLogin}
+          onChange={(v) => onPatch({ portalAutoLogin: v })}
+        >
           앱 시작 시 자동 로그인 (기본 꺼짐)
-        </label>
+        </SettingsCheckbox>
         <label>
           시작 지연
           <select
@@ -468,22 +457,18 @@ export function WorkPortalSettingsSection({
             </button>
           </p>
         ) : null}
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.portalOsCertInput}
-            onChange={(e) => onPatch({ portalOsCertInput: e.target.checked })}
-          />
+        <SettingsCheckbox
+          checked={draft.portalOsCertInput}
+          onChange={(v) => onPatch({ portalOsCertInput: v })}
+        >
           인증서 비밀번호 OS 창 자동 입력 (실험)
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.portalSessionExtend}
-            onChange={(e) => onPatch({ portalSessionExtend: e.target.checked })}
-          />
+        </SettingsCheckbox>
+        <SettingsCheckbox
+          checked={draft.portalSessionExtend}
+          onChange={(v) => onPatch({ portalSessionExtend: v })}
+        >
           세션 자동 연장 (POC)
-        </label>
+        </SettingsCheckbox>
         {draft.portalSessionExtend && (
           <label>
             연장 주기(분)

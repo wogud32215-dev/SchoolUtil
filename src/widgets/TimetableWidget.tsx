@@ -240,7 +240,7 @@ export function TimetableWidget({
       </div>
       {autoSync && (
         <p className="tt-sync-hint muted">
-          컴시간 자동 갱신 중입니다. 설정 → 학교에서 끌 수 있습니다.
+          컴시간 자동 갱신 중입니다. 설정 → 학교 연동에서 끌 수 있습니다.
         </p>
       )}
       {!edit && (

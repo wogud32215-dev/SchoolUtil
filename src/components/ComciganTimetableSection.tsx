@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import type { AppSettings } from "@/types/state";
 import { SettingsRow } from "@/components/settings/SettingsRow";
+import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
 import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
 
 type SchoolRow = {
@@ -134,14 +135,12 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         title="교사 시간표 (컴시간)"
         hint="이번 주 교체가 반영된 표를 가져옵니다. 자동 갱신은 08:00·13:00과 앱 시작 시입니다. 시간표 빈 칸(+)에서 «매주» 또는 «이번 주만»을 고를 수 있습니다."
       >
-        <label className="settings-check-line">
-          <input
-            type="checkbox"
-            checked={draft.timetableAutoSync}
-            onChange={(e) => onPatch({ timetableAutoSync: e.target.checked })}
-          />
+        <SettingsCheckbox
+          checked={draft.timetableAutoSync}
+          onChange={(v) => onPatch({ timetableAutoSync: v })}
+        >
           자동 갱신 사용
-        </label>
+        </SettingsCheckbox>
       </SettingsRow>
 
       <SettingsRow title="가져오기 경로">

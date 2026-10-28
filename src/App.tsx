@@ -478,7 +478,7 @@ export default function App() {
       {electronOk && !state.settings.onboardingDone && (
         <div className="onboarding-banner" role="region" aria-label="처음 설정">
           <span>
-            학교 이름을 검색해 선택해 보세요. 하단 톱니바퀴 «설정 → 학교»에서 할
+            학교 이름을 검색해 선택해 보세요. 하단 톱니바퀴 «설정 → 학교 연동»에서 할
             수 있습니다.
           </span>
           <button
