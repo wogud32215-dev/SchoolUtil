@@ -35,6 +35,10 @@ export type MemoNote = {
   color: string;
   x: number;
   y: number;
+  /** 쪽지 너비(px). 없으면 메모 영역 전체 너비 */
+  width?: number;
+  /** 쪽지 높이(px). 없으면 기본 높이 */
+  height?: number;
   updatedAt: string;
 };
 
@@ -260,6 +264,7 @@ export type AppSettings = {
   timetableLastSyncVia: "" | "direct" | "s2h9";
   timetableLastSyncReason: "" | "startup" | "schedule" | "manual";
   timetableSubstituteNotifiedKey: string;
+  dismissedUpdateVersion?: string;
 };
 
 export type ComciganTeacherOption = {

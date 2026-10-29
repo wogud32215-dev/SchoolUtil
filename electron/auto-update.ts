@@ -1,40 +1,115 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Notification } from "electron";
 import electronUpdater from "electron-updater";
 
 const { autoUpdater } = electronUpdater;
 
+export type UpdateDownloadPhase = "idle" | "downloading" | "downloaded";
+
+export type UpdateStatus = {
+  available: boolean;
+  version: string | null;
+  downloadPhase: UpdateDownloadPhase;
+  downloadPercent: number;
+  lastError: string | null;
+  checking: boolean;
+};
+
+let mainWindowRef: (() => BrowserWindow | null) | null = null;
+
+const status: UpdateStatus = {
+  available: false,
+  version: null,
+  downloadPhase: "idle",
+  downloadPercent: 0,
+  lastError: null,
+  checking: false,
+};
+
+function sendToRenderer(channel: string, payload: unknown): void {
+  mainWindowRef?.()?.webContents.send(channel, payload);
+}
+
+function showUpdateNotification(title: string, body: string): void {
+  const win = mainWindowRef?.() ?? null;
+  if (win?.isFocused()) return;
+  if (!Notification.isSupported()) return;
+  const notification = new Notification({ title, body });
+  notification.on("click", () => {
+    win?.show();
+    win?.focus();
+  });
+  notification.show();
+}
+
+export function getUpdateStatus(): UpdateStatus {
+  return { ...status };
+}
+
+function setAvailable(version: string): void {
+  status.available = true;
+  status.version = version;
+  status.lastError = null;
+  status.checking = false;
+  sendToRenderer("update:available", { version });
+  showUpdateNotification(
+    "SchoolUtil 업데이트",
+    `새 버전 ${version}이 있습니다. 앱을 열어 받을 수 있습니다.`,
+  );
+}
+
 export function initAutoUpdate(mainWindow: () => BrowserWindow | null): void {
   if (!app.isPackaged) return;
+
+  mainWindowRef = mainWindow;
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("update-available", (info) => {
-    mainWindow()?.webContents.send("update:available", {
-      version: info.version,
-    });
+    setAvailable(info.version);
   });
 
   autoUpdater.on("update-not-available", () => {
-    mainWindow()?.webContents.send("update:not-available", {});
+    status.available = false;
+    status.version = null;
+    status.checking = false;
+    status.lastError = null;
+    sendToRenderer("update:not-available", {});
   });
 
   autoUpdater.on("error", (err) => {
-    mainWindow()?.webContents.send("update:error", {
+    status.checking = false;
+    status.lastError = err.message;
+    if (status.downloadPhase === "downloading") {
+      status.downloadPhase = "idle";
+      status.downloadPercent = 0;
+    }
+    sendToRenderer("update:error", {
       message: err.message,
     });
   });
 
   autoUpdater.on("download-progress", (p) => {
-    mainWindow()?.webContents.send("update:progress", {
+    status.downloadPhase = "downloading";
+    status.downloadPercent = p.percent;
+    sendToRenderer("update:progress", {
       percent: p.percent,
     });
   });
 
   autoUpdater.on("update-downloaded", () => {
-    mainWindow()?.webContents.send("update:downloaded", {});
+    status.downloadPhase = "downloaded";
+    status.downloadPercent = 100;
+    status.lastError = null;
+    sendToRenderer("update:downloaded", {});
+    const ver = status.version;
+    showUpdateNotification(
+      "SchoolUtil 업데이트",
+      ver
+        ? `버전 ${ver} 다운로드를 마쳤습니다. 앱을 열어 설치할 수 있습니다.`
+        : "업데이트 다운로드를 마쳤습니다. 앱을 열어 설치할 수 있습니다.",
+    );
   });
-
 }
 
 export async function checkForUpdates(): Promise<
@@ -45,9 +120,12 @@ export async function checkForUpdates(): Promise<
     return { ok: false, error: "개발 모드에서는 업데이트를 확인할 수 없습니다." };
   }
   try {
+    status.checking = true;
+    status.lastError = null;
     await autoUpdater.checkForUpdates();
     return { ok: true, status: "checking" };
   } catch (e) {
+    status.checking = false;
     return {
       ok: false,
       error:
@@ -59,10 +137,18 @@ export async function checkForUpdates(): Promise<
 export async function downloadUpdate(): Promise<
   { ok: true } | { ok: false; error: string }
 > {
+  if (!status.available || !status.version) {
+    return { ok: false, error: "받을 업데이트가 없습니다." };
+  }
   try {
+    status.downloadPhase = "downloading";
+    status.downloadPercent = 0;
+    status.lastError = null;
     await autoUpdater.downloadUpdate();
     return { ok: true };
   } catch (e) {
+    status.downloadPhase = "idle";
+    status.downloadPercent = 0;
     return {
       ok: false,
       error:

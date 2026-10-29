@@ -37,6 +37,8 @@ export type MemoNote = {
   color: string;
   x: number;
   y: number;
+  width?: number;
+  height?: number;
   updatedAt: string;
 };
 
@@ -258,6 +260,8 @@ export type AppSettings = {
   timetableLastSyncReason: "" | "startup" | "schedule" | "manual";
   /** 마지막으로 교체 알림을 본 시간표 교체 묶음( fingerprint ) */
   timetableSubstituteNotifiedKey: string;
+  /** 업데이트 배너에서 «나중에» 누른 버전 (semver 문자열) */
+  dismissedUpdateVersion?: string;
 };
 
 const PORTAL_LAST_RUN_KEY: Record<

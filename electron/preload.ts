@@ -100,6 +100,10 @@ const api = {
   importBackup: () => ipcRenderer.invoke("backup:import"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   downloadUpdate: () => ipcRenderer.invoke("update:download"),
+  getUpdateStatus: () =>
+    ipcRenderer.invoke("update:get-status") as Promise<
+      import("./auto-update").UpdateStatus
+    >,
   installUpdate: () => ipcRenderer.invoke("update:install"),
   getPinToFront: (): Promise<boolean> => ipcRenderer.invoke("widget:get-pin"),
   togglePinToFront: (): Promise<boolean> =>
@@ -159,6 +163,13 @@ const api = {
     };
     ipcRenderer.on("update:error", handler);
     return () => ipcRenderer.removeListener("update:error", handler);
+  },
+  onUpdateProgress: (listener: (payload: { percent: number }) => void) => {
+    const handler = (_event: IpcRendererEvent, payload: { percent: number }) => {
+      listener(payload);
+    };
+    ipcRenderer.on("update:progress", handler);
+    return () => ipcRenderer.removeListener("update:progress", handler);
   },
   onStoreUpdated: (listener: (state: PersistedState) => void) => {
     const handler = (_event: IpcRendererEvent, next: PersistedState) => {

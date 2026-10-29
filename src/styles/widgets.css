@@ -2513,15 +2513,109 @@
 }
 
 .memo-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.memo-note-resizable {
+  position: relative;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.memo-note-resizable > .memo-note {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.memo-note-handle {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.memo-note-resizable:hover .memo-note-handle,
+.memo-note-resizable:focus-within .memo-note-handle {
+  opacity: 1;
+}
+
+.memo-note-handle--se,
+.memo-note-handle--sw,
+.memo-note-handle--ne,
+.memo-note-handle--nw {
+  width: 14px;
+  height: 14px;
+}
+
+.memo-note-handle--se {
+  right: 0;
+  bottom: 0;
+  cursor: se-resize;
+}
+
+.memo-note-handle--sw {
+  left: 0;
+  bottom: 0;
+  cursor: sw-resize;
+}
+
+.memo-note-handle--ne {
+  right: 0;
+  top: 0;
+  cursor: ne-resize;
+}
+
+.memo-note-handle--nw {
+  left: 0;
+  top: 0;
+  cursor: nw-resize;
+}
+
+.memo-note-handle--n,
+.memo-note-handle--s {
+  left: 14px;
+  right: 14px;
+  height: 8px;
+}
+
+.memo-note-handle--n {
+  top: 0;
+  cursor: n-resize;
+}
+
+.memo-note-handle--s {
+  bottom: 0;
+  cursor: s-resize;
+}
+
+.memo-note-handle--e,
+.memo-note-handle--w {
+  top: 14px;
+  bottom: 14px;
+  width: 8px;
+}
+
+.memo-note-handle--e {
+  right: 0;
+  cursor: e-resize;
+}
+
+.memo-note-handle--w {
+  left: 0;
+  cursor: w-resize;
 }
 
 .memo-note {
   position: relative;
   --memo-tint: #e8e4d4;
-  min-height: 96px;
+  min-height: 0;
   border-radius: 12px;
   padding: 10px 12px 12px;
   border: 1px solid color-mix(in srgb, var(--memo-tint) 38%, var(--border));
@@ -2571,11 +2665,15 @@
 
 .memo-note textarea {
   width: 100%;
-  min-height: 76px;
+  flex: 1;
+  min-height: 0;
   margin: 0;
   font-size: 0.86rem;
   line-height: 1.5;
   color: var(--text);
+  resize: none;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .memo-note textarea::placeholder {

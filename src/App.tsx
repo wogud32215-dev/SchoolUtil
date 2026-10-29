@@ -33,6 +33,8 @@ import { SettingsIcon } from "@/components/SettingsIcon";
 import { WidgetHeaderIcon } from "@/components/WidgetHeaderIcon";
 import { TodayGlanceModal } from "@/components/TodayGlanceModal";
 import { ComciganSubstituteModal } from "@/components/ComciganSubstituteModal";
+import { UpdatePromptBanner } from "@/components/UpdatePromptBanner";
+import { useAppUpdatePrompt } from "@/hooks/useAppUpdatePrompt";
 import { timetableSubstituteFingerprint } from "@/utils/timetableSubstitute";
 import {
   buildTodayGlanceSyncContent,
@@ -43,7 +45,7 @@ import {
 } from "@/utils/todayGlance";
 
 const WIDGET_INTERACTIVE_SELECTOR =
-  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .app-settings-dock, .settings-modal, .settings-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
+  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .update-prompt-banner, .app-settings-dock, .settings-modal, .settings-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
 
 function toGridLayout(
   ids: WidgetId[],
@@ -179,6 +181,17 @@ export default function App() {
       },
     });
   }, [patch]);
+
+  const appUpdate = useAppUpdatePrompt({
+    dismissedVersion: state?.settings.dismissedUpdateVersion,
+    onDismissVersion: (version) => {
+      const live = stateRef.current;
+      if (!live) return;
+      void patch({
+        settings: { ...live.settings, dismissedUpdateVersion: version },
+      });
+    },
+  });
 
   useEffect(() => {
     if (!ready || !state) return;
@@ -499,6 +512,18 @@ export default function App() {
           숨기기·맨 앞 보기는 Ctrl+Alt+D · 비상 탈출은 Ctrl+Alt+Shift+D
         </div>
       )}
+      {electronOk && appUpdate.visible ? (
+        <UpdatePromptBanner
+          version={appUpdate.version}
+          phase={appUpdate.phase}
+          percent={appUpdate.percent}
+          error={appUpdate.error}
+          onDismissAvailable={appUpdate.dismissAvailable}
+          onDeferInstall={appUpdate.deferInstall}
+          onDownload={appUpdate.download}
+          onInstall={appUpdate.install}
+        />
+      ) : null}
       <header className="title-bar">
         <h1>
           SchoolUtil

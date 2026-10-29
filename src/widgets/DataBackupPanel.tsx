@@ -1,53 +1,25 @@
 import { useEffect, useState } from "react";
+import {
+  clearUpdateCheckFeedback,
+  markUpdateCheckStarted,
+  useUpdateCheckFeedback,
+} from "@/hooks/useAppUpdatePrompt";
 
 export function DataBackupPanel() {
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const checkFeedback = useUpdateCheckFeedback();
 
   useEffect(() => {
-    const unavail = window.schoolUtil?.onUpdateAvailable?.((payload) => {
-      if (
-        window.confirm(
-          `새 버전 ${payload.version}이 있습니다. 지금 받을까요?`,
-        )
-      ) {
-        setBusy(true);
-        setStatus("업데이트 다운로드 중…");
-        void window.schoolUtil?.downloadUpdate?.().then((res) => {
-          setBusy(false);
-          if (!res?.ok) {
-            setStatus(res?.error ?? "다운로드에 실패했습니다.");
-          }
-        });
-      }
-    });
-    const undown = window.schoolUtil?.onUpdateDownloaded?.(() => {
-      setBusy(false);
-      if (window.confirm("다운로드를 마쳤습니다. 지금 설치하고 다시 시작할까요?")) {
-        void window.schoolUtil?.installUpdate?.();
-      } else {
-        setStatus("다음 실행 시 업데이트가 적용됩니다.");
-      }
-    });
-    const unNot = window.schoolUtil?.onUpdateNotAvailable?.(() => {
-      setBusy(false);
-      setStatus("현재 최신 버전입니다.");
-    });
-    const unErr = window.schoolUtil?.onUpdateError?.((payload) => {
-      setBusy(false);
-      setStatus(payload.message || "업데이트 확인에 실패했습니다.");
-    });
-    return () => {
-      unavail?.();
-      undown?.();
-      unNot?.();
-      unErr?.();
-    };
-  }, []);
+    if (checkFeedback) {
+      setStatus(checkFeedback);
+    }
+  }, [checkFeedback]);
 
   async function exportData() {
     setBusy(true);
     setStatus(null);
+    clearUpdateCheckFeedback();
     const res = await window.schoolUtil?.exportBackup?.();
     setBusy(false);
     if (!res) {
@@ -72,6 +44,7 @@ export function DataBackupPanel() {
     }
     setBusy(true);
     setStatus(null);
+    clearUpdateCheckFeedback();
     const res = await window.schoolUtil?.importBackup?.();
     setBusy(false);
     if (!res) {
@@ -89,14 +62,13 @@ export function DataBackupPanel() {
 
   async function checkUpdate() {
     setBusy(true);
-    setStatus(null);
+    clearUpdateCheckFeedback();
+    markUpdateCheckStarted();
     const res = await window.schoolUtil?.checkForUpdates?.();
     setBusy(false);
     if (!res?.ok) {
       setStatus(res?.error ?? "업데이트를 확인할 수 없습니다.");
-      return;
     }
-    setStatus("업데이트 확인 중… 잠시 후 알림이 뜹니다.");
   }
 
   return (
@@ -119,6 +91,11 @@ export function DataBackupPanel() {
             <strong>주의</strong> — Chrome 탭이 아닌 <strong>SchoolUtil</strong>{" "}
             앱 창에서만 디스크에 저장됩니다. 보내기 파일에는 API 키·비밀번호가
             들어갈 수 있으니 공유·공개 폴더에 올리지 마세요.
+          </li>
+          <li>
+            <strong>업데이트</strong> — GitHub Releases에서 설치한 버전은 앱
+            실행·12시간마다 자동으로 새 버전을 확인합니다. 상단 배너에서 받을
+            수 있습니다.
           </li>
         </ul>
       </div>

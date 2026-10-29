@@ -138,6 +138,14 @@ declare global {
       downloadUpdate: () => Promise<
         { ok: true } | { ok: false; error: string }
       >;
+      getUpdateStatus: () => Promise<{
+        available: boolean;
+        version: string | null;
+        downloadPhase: "idle" | "downloading" | "downloaded";
+        downloadPercent: number;
+        lastError: string | null;
+        checking: boolean;
+      }>;
       installUpdate: () => Promise<void>;
       getPinToFront: () => Promise<boolean>;
       togglePinToFront: () => Promise<boolean>;
@@ -158,6 +166,7 @@ declare global {
       onUpdateDownloaded: (listener: () => void) => () => void;
       onUpdateNotAvailable: (listener: () => void) => () => void;
       onUpdateError: (listener: (payload: { message: string }) => void) => () => void;
+      onUpdateProgress: (listener: (payload: { percent: number }) => void) => () => void;
       onStoreUpdated: (
         listener: (state: import("@/types/state").PersistedState) => void,
       ) => () => void;

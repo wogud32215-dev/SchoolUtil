@@ -134,12 +134,24 @@ export function validatePatch(partial: unknown): Partial<PersistedState> {
         if (!Array.isArray(value)) break;
         out.memos = value.slice(0, MAX_MEMOS).map((m) => {
           const row = m as Record<string, unknown>;
+          const rawW = Number(row.width);
+          const rawH = Number(row.height);
+          const width =
+            Number.isFinite(rawW) && rawW >= 120
+              ? Math.min(Math.round(rawW), 1200)
+              : undefined;
+          const height =
+            Number.isFinite(rawH) && rawH >= 72
+              ? Math.min(Math.round(rawH), 800)
+              : undefined;
           return {
             id: clampString(row.id, 64) || randomUUID(),
             text: clampString(row.text, MAX_TEXT),
             color: clampString(row.color, 32) || "#fef08a",
             x: Number(row.x) || 0,
             y: Number(row.y) || 0,
+            ...(width !== undefined ? { width } : {}),
+            ...(height !== undefined ? { height } : {}),
             updatedAt:
               clampString(row.updatedAt, 40) || new Date().toISOString(),
           };

@@ -10,6 +10,7 @@ const SHAPE_SELECTORS = [
   ".widget-card",
   ".onboarding-banner",
   ".persist-banner",
+  ".update-prompt-banner",
   ".app-settings-dock",
   ".settings-modal",
   ".settings-modal-backdrop",

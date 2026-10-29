@@ -360,6 +360,10 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     timetableSubstituteNotifiedKey: String(
       raw.timetableSubstituteNotifiedKey ?? "",
     ).slice(0, 4000),
+    dismissedUpdateVersion: (() => {
+      const v = String(raw.dismissedUpdateVersion ?? "").trim();
+      return v ? v.slice(0, 32) : undefined;
+    })(),
   };
 }
 

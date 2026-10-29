@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import {
   checkForUpdates,
   downloadUpdate,
+  getUpdateStatus,
   initAutoUpdate,
   quitAndInstall,
 } from "./auto-update";
@@ -940,6 +941,7 @@ function registerIpc() {
 
   ipcMain.handle("update:check", () => checkForUpdates());
   ipcMain.handle("update:download", () => downloadUpdate());
+  ipcMain.handle("update:get-status", () => getUpdateStatus());
   ipcMain.handle("update:install", () => {
     quitAndInstall();
   });
@@ -1249,6 +1251,9 @@ app.whenReady().then(() => {
   ensureGlobalShortcutsRegistered();
   powerMonitor.on("resume", () => {
     ensureGlobalShortcutsRegistered();
+    if (app.isPackaged) {
+      void checkForUpdates();
+    }
   });
   powerMonitor.on("unlock-screen", () => {
     ensureGlobalShortcutsRegistered();
@@ -1264,6 +1269,11 @@ app.whenReady().then(() => {
     setTimeout(() => {
       void checkForUpdates();
     }, 8000);
+    const updateRecheckMs = 12 * 60 * 60 * 1000;
+    const updateRecheckTimer = setInterval(() => {
+      void checkForUpdates();
+    }, updateRecheckMs);
+    updateRecheckTimer.unref?.();
   }
 
   app.on("activate", () => {

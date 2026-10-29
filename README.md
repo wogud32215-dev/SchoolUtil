@@ -7,7 +7,7 @@ Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
 파일 이름 예: `SchoolUtil-Setup-1.0.1.exe`
 
-설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
+설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»를 볼 수 있습니다. 새 버전은 **설정을 열지 않아도** 상단 배너로 안내되며, 필요할 때 «업데이트 확인»으로 수동 확인도 할 수 있습니다.
 
 ### 사용 설명서
 
@@ -149,6 +149,15 @@ git push origin v1.0.1
 ```
 
 4. [Actions → Release](https://github.com/wogud32215-dev/SchoolUtil/actions)가 성공하면 [Releases](https://github.com/wogud32215-dev/SchoolUtil/releases)에 설치 파일이 생깁니다.
+
+**릴리스 = 사용자 알림:** 설치판 앱은 실행 후 약 8초 뒤·12시간마다·절전 복귀 시 GitHub에서 새 버전을 확인합니다. 새 버전이 있으면 **화면 상단 배너**와 (창이 가려져 있으면) **Windows 알림**으로 안내하며, «지금 받기»로 Setup을 내려받아 재시작 설치할 수 있습니다. 별도 푸시 서버는 없습니다.
+
+### 사용자에게 GitHub 설치 1회 안내 (배포자)
+
+| 상황 | 안내 |
+|------|------|
+| **앞으로 (권장)** | [Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)의 **Setup exe**로 한 번 설치 → 이후는 앱이 자동으로 업데이트합니다. |
+| **예전 USB·직접 전달 빌드** | GitHub `publish`가 없거나 구버전 설치 파일이면 자동 업데이트가 동작하지 않을 수 있습니다. Releases Setup으로 **한 번 덮어쓰기 설치**하면 `%APPDATA%\SchoolUtil` 데이터는 유지된 채 자동 업데이트 경로로 전환됩니다. |
 
 로컬에서만 올릴 때: [PAT](https://github.com/settings/tokens) (`repo`)를 `GH_TOKEN`으로 두고 `npm run dist:publish` (서명 없을 때 `CSC_IDENTITY_AUTO_DISCOVERY=false`).
 
