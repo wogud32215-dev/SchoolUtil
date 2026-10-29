@@ -96,6 +96,14 @@ export function WidgetHeaderIcon({ id, size = 15, className }: Props) {
           <path d="M18.5 14v2" />
         </svg>
       );
+    case "quicklaunch":
+      return (
+        <svg {...common}>
+          <rect x="4" y="4" width="7" height="7" rx="1.5" />
+          <rect x="13" y="4" width="7" height="7" rx="1.5" />
+          <path d="M7.5 15.5h9M12 13v5" />
+        </svg>
+      );
     case "settings":
       return (
         <svg {...common}>

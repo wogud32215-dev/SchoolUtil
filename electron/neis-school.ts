@@ -8,6 +8,7 @@ export type NeisSchoolRow = {
   schoolCode: string;
   name: string;
   address: string;
+  locationName: string;
   kind: string;
 };
 
@@ -85,6 +86,7 @@ export async function searchSchools(
         schoolCode: String(r.SD_SCHUL_CODE ?? "").trim(),
         name: String(r.SCHUL_NM ?? "").trim(),
         address: String(r.ORG_RDNMA ?? r.ORG_RDNDA ?? "").trim(),
+        locationName: String(r.LCTN_SC_NM ?? "").trim(),
         kind: String(r.SCHUL_KND_SC_NM ?? "").trim(),
       }))
       .filter((s) => s.officeCode && s.schoolCode && s.name);

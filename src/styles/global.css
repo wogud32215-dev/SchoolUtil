@@ -69,8 +69,7 @@ html.widget-mode[data-bg-fill="full"] #root {
 .app-shell.widget-mode.widget-pinned .title-bar,
 .app-shell.widget-mode.widget-pinned .pin-banner,
 .app-shell.widget-mode.widget-pinned .onboarding-banner,
-.app-shell.widget-mode.widget-pinned .persist-banner,
-.app-shell.widget-mode.widget-pinned .app-settings-dock {
+.app-shell.widget-mode.widget-pinned .persist-banner {
   backdrop-filter: blur(10px) saturate(1.05);
   -webkit-backdrop-filter: blur(10px) saturate(1.05);
 }
@@ -1051,70 +1050,39 @@ select {
   min-width: 32px;
 }
 
-.app-settings-dock {
-  -webkit-app-region: no-drag;
-  position: fixed;
-  transform: translate(-50%, -50%);
-  z-index: 40;
-  cursor: grab;
-  touch-action: none;
+.dock-shortcuts-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  padding: 10px 16px;
-  border-radius: 22px;
-  border: 1px solid var(--card-stroke, rgba(255, 255, 255, 0.5));
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(24px) saturate(1.3);
-  box-shadow: var(--shadow-dock);
 }
 
-.app-shell.widget-mode .app-settings-dock {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-[data-theme="blue"] .app-settings-dock,
-[data-theme="green"] .app-settings-dock,
-[data-theme="dark"] .app-settings-dock {
-  background: rgba(30, 41, 59, 0.78);
-  border-color: var(--border);
-}
-
-.app-settings-dock-btn {
+.dock-shortcuts-list-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  color: #fff;
-  background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 75%, #000));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
-  transition: transform 0.12s ease, filter 0.12s ease;
+  gap: 10px;
 }
 
-.app-settings-dock-btn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+.dock-shortcuts-list-icon {
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--bg-muted, #f3f4f6);
 }
 
-.app-settings-dock-btn:active {
-  transform: translateY(0);
+.dock-shortcuts-list-label {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font: inherit;
 }
 
-.app-settings-dock--dragging {
-  cursor: grabbing;
-  opacity: 0.92;
-  box-shadow: var(--shadow-dock), 0 8px 28px rgba(15, 23, 42, 0.18);
-}
-
-.app-settings-dock--dragging .app-settings-dock-btn:hover {
-  transform: none;
-  filter: none;
+.dock-shortcuts-remove {
+  flex-shrink: 0;
 }
 
 .settings-modal-backdrop {
@@ -2197,5 +2165,197 @@ select {
   .settings-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+}
+
+.extension-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.extension-modal {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.extension-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.extension-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.extension-modal-sub {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.extension-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.extension-modal-close {
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.extension-modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.extension-modal-toolbar input {
+  flex: 1;
+}
+
+.extension-copy-toast {
+  font-size: 0.85rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.extension-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 18px 18px;
+}
+
+.extension-area-heading {
+  margin: 16px 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.extension-area-heading:first-child {
+  margin-top: 0;
+}
+
+.extension-dept-heading {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.extension-contact-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+
+.extension-contact-list li {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.extension-contact-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  background: color-mix(in srgb, var(--bg-muted, #f8fafc) 55%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.extension-contact-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.extension-contact-btn:disabled {
+  cursor: default;
+  opacity: 0.95;
+}
+
+.extension-contact-label {
+  font-size: 0.88rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extension-contact-ext {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.extension-contact-remove {
+  flex-shrink: 0;
+  width: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.extension-modal-add {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-muted, #f8fafc) 40%, transparent);
+}
+
+.extension-add-title {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.extension-add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 520px) {
+  .extension-add-grid {
+    grid-template-columns: 1fr;
   }
 }

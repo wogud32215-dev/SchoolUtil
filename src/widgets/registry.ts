@@ -11,6 +11,7 @@ export const ALL_WIDGET_IDS = [
   "timetable",
   "schoolsched",
   "workportal",
+  "quicklaunch",
   "settings",
 ] as const;
 
@@ -28,6 +29,7 @@ export const CLASSIC_LAYOUT: Record<WidgetId, LayoutItem> = {
   timetable: { x: 0, y: 12, w: 7, h: 10 },
   schoolsched: { x: 7, y: 12, w: 5, h: 8 },
   workportal: { x: 0, y: 22, w: 4, h: 5 },
+  quicklaunch: { x: 4, y: 22, w: 4, h: 3 },
   settings: { x: 7, y: 20, w: 5, h: 7 },
 };
 
@@ -43,6 +45,7 @@ export const DEFAULT_LAYOUT: Record<WidgetId, LayoutItem> = {
   schoolsched: { x: 9, y: 4, w: 3, h: 9 },
   timetable: { x: 0, y: 11, w: 8, h: 9 },
   workportal: { x: 8, y: 13, w: 4, h: 4 },
+  quicklaunch: { x: 2, y: 20, w: 8, h: 3 },
   settings: { x: 8, y: 17, w: 4, h: 3 },
 };
 
@@ -57,7 +60,8 @@ const RECOMMENDED_LAYOUT: Record<WidgetId, LayoutItem> = {
   schoolsched: { x: 5, y: 11, w: 2, h: 6 },
   timetable: { x: 7, y: 11, w: 5, h: 7 },
   dday: { x: 0, y: 13, w: 3, h: 4 },
-  settings: { x: 4, y: 23, w: 4, h: 3 },
+  quicklaunch: { x: 3, y: 23, w: 6, h: 3 },
+  settings: { x: 9, y: 23, w: 3, h: 3 },
 };
 
 const CALENDAR_LAYOUT: Record<WidgetId, LayoutItem> = {
@@ -72,6 +76,7 @@ const CALENDAR_LAYOUT: Record<WidgetId, LayoutItem> = {
   schoolsched: { x: 7, y: 13, w: 5, h: 5 },
   timetable: { x: 0, y: 17, w: 12, h: 6 },
   workportal: { x: 0, y: 23, w: 4, h: 3 },
+  quicklaunch: { x: 8, y: 23, w: 4, h: 3 },
   settings: { x: 4, y: 23, w: 4, h: 3 },
 };
 
@@ -87,6 +92,7 @@ const TIMETABLE_LAYOUT: Record<WidgetId, LayoutItem> = {
   memo: { x: 0, y: 14, w: 4, h: 4 },
   schoolsched: { x: 4, y: 14, w: 3, h: 4 },
   workportal: { x: 0, y: 18, w: 4, h: 3 },
+  quicklaunch: { x: 4, y: 18, w: 4, h: 3 },
   settings: { x: 4, y: 18, w: 4, h: 3 },
 };
 
@@ -101,7 +107,8 @@ const COMPACT_LAYOUT: Record<WidgetId, LayoutItem> = {
   schoolsched: { x: 0, y: 7, w: 6, h: 5 },
   timetable: { x: 6, y: 5, w: 6, h: 7 },
   workportal: { x: 0, y: 12, w: 3, h: 3 },
-  settings: { x: 3, y: 12, w: 3, h: 3 },
+  quicklaunch: { x: 3, y: 12, w: 6, h: 3 },
+  settings: { x: 9, y: 12, w: 3, h: 3 },
 };
 
 const WIDE_LAYOUT: Record<WidgetId, LayoutItem> = {
@@ -115,6 +122,7 @@ const WIDE_LAYOUT: Record<WidgetId, LayoutItem> = {
   schoolsched: { x: 0, y: 6, w: 6, h: 4 },
   timetable: { x: 0, y: 10, w: 12, h: 8 },
   workportal: { x: 6, y: 6, w: 3, h: 3 },
+  quicklaunch: { x: 0, y: 18, w: 6, h: 3 },
   settings: { x: 9, y: 6, w: 3, h: 3 },
 };
 
@@ -156,6 +164,7 @@ export const WIDGET_TITLES: Record<WidgetId, string> = {
   timetable: "시간표 (수동)",
   schoolsched: "학사일정 (NEIS)",
   workportal: "자동 로그인 위젯",
+  quicklaunch: "앱 바로가기",
   settings: "설정",
 };
 
@@ -183,6 +192,7 @@ export const WIDGET_TOGGLE_LABELS: { id: WidgetId; label: string }[] = [
   { id: "timetable", label: "시간표" },
   { id: "schoolsched", label: "학사일정" },
   { id: "workportal", label: "자동 로그인 위젯" },
+  { id: "quicklaunch", label: "앱 바로가기" },
 ];
 
 export function isWidgetId(value: string): value is WidgetId {
@@ -197,7 +207,7 @@ export function isWidgetVisible(
   return !disabledWidgets.includes(id);
 }
 
-/** 대시보드 그리드에 올릴 위젯 (설정은 도크·모달) */
+/** 대시보드 그리드에 올릴 위젯 (설정 카드·설정 그리드 id는 제외) */
 export function visibleWidgetIds(disabledWidgets: readonly string[]): WidgetId[] {
   return ALL_WIDGET_IDS.filter((id) => isWidgetVisible(id, disabledWidgets));
 }

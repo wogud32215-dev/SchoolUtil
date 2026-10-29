@@ -1,6 +1,7 @@
 import Store from "electron-store";
 import { app } from "electron";
 import path from "node:path";
+import type { DockShortcutItem } from "../src/types/state";
 import { writePrePatchBackup } from "./backup";
 import { defaultAppSettings, normalizeSettings } from "./settings-normalize";
 import {
@@ -15,6 +16,8 @@ import {
 } from "./secrets";
 import type { PortalId } from "./portal-ids";
 import { validatePatch } from "./validate-patch";
+import { normalizeExtensionDirectory } from "./extensions-normalize";
+import { defaultExtensionDirectory } from "../src/data/defaultExtensionDirectory";
 
 export type PortalRunRecord = {
   at: string;
@@ -132,7 +135,12 @@ export type AppTheme =
   | "green"
   | "dark";
 
-export type FontFamilySetting = "pretendard" | "system";
+export type FontFamilySetting =
+  | "pretendard"
+  | "system"
+  | "noto-sans-kr"
+  | "ibm-plex-sans-kr"
+  | "gowun-dodum";
 
 export type FontWeightLevel =
   | "light"
@@ -203,6 +211,7 @@ export type AppSettings = {
   widgetLockToScreen: boolean;
   settingsDockX: number;
   settingsDockY: number;
+  dockShortcuts: DockShortcutItem[];
   globalShortcuts: boolean;
   disabledWidgets: string[];
   todayGlanceEnabled: boolean;
@@ -315,6 +324,7 @@ export type PersistedState = {
   timetable: TimetableData;
   layout: Record<string, { x: number; y: number; w: number; h: number }>;
   settings: AppSettings;
+  extensions: import("../src/types/extensions").ExtensionDirectory;
 };
 
 const defaults: PersistedState = {
@@ -325,6 +335,7 @@ const defaults: PersistedState = {
   timetable: defaultTimetable(),
   layout: {},
   settings: defaultAppSettings(),
+  extensions: defaultExtensionDirectory(),
 };
 
 let appStore: Store<PersistedState> | null = null;
@@ -397,6 +408,7 @@ export function getState(): PersistedState {
     timetable: s.get("timetable") ?? defaultTimetable(),
     layout: s.get("layout"),
     settings: settingsForRuntime(s.get("settings")),
+    extensions: normalizeExtensionDirectory(s.get("extensions")),
   };
 }
 
@@ -431,5 +443,6 @@ export function replaceState(next: PersistedState): PersistedState {
   s.set("timetable", toSave.timetable);
   s.set("layout", toSave.layout);
   s.set("settings", toSave.settings);
+  s.set("extensions", normalizeExtensionDirectory(toSave.extensions));
   return getState();
 }

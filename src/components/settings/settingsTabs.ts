@@ -17,7 +17,7 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: "widget", label: "카드" },
   { id: "screen", label: "표시" },
   { id: "school", label: "학교 연동" },
-  { id: "data", label: "백업" },
+  { id: "data", label: "업데이트 및 백업" },
   { id: "portal", label: "포털" },
   { id: "help", label: "안내" },
 ];

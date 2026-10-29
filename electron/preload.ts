@@ -11,6 +11,10 @@ const api = {
   minimize: () => ipcRenderer.invoke("app:minimize"),
   hide: () => ipcRenderer.invoke("app:hide"),
   getAppVersion: () => ipcRenderer.invoke("app:version") as Promise<string>,
+  openUserGuide: () =>
+    ipcRenderer.invoke("app:open-user-guide") as Promise<
+      { ok: true; path: string } | { ok: false; error: string }
+    >,
   listDisplays: () =>
     ipcRenderer.invoke("screen:list-displays") as Promise<
       {
@@ -59,6 +63,11 @@ const api = {
     ipcRenderer.invoke("neis:meal", range ?? {}),
   fetchWeather: () => ipcRenderer.invoke("weather:current"),
   fetchWeatherForecast: () => ipcRenderer.invoke("weather:forecast"),
+  searchWeatherPlaces: (query: string) =>
+    ipcRenderer.invoke("weather:search-places", { query }) as Promise<
+      | { ok: true; places: import("../src/types/weather").WeatherGeocodePlace[] }
+      | { ok: false; error: string }
+    >,
   searchComciganSchools: (query: string) =>
     ipcRenderer.invoke("comcigan:search-schools", { query }) as Promise<
       | {
@@ -98,6 +107,16 @@ const api = {
     >,
   exportBackup: () => ipcRenderer.invoke("backup:export"),
   importBackup: () => ipcRenderer.invoke("backup:import"),
+  pickDockShortcut: (currentCount: number) =>
+    ipcRenderer.invoke("dock:pick-shortcut", { currentCount }) as Promise<
+      | { ok: true; item: import("../src/types/state").DockShortcutItem }
+      | { ok: false; cancelled: true }
+      | { ok: false; error: string }
+    >,
+  launchDockShortcut: (sourcePath: string) =>
+    ipcRenderer.invoke("dock:launch", { sourcePath }) as Promise<
+      { ok: true } | { ok: false; error: string }
+    >,
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   downloadUpdate: () => ipcRenderer.invoke("update:download"),
   getUpdateStatus: () =>

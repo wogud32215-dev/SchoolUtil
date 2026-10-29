@@ -18,6 +18,9 @@ declare global {
       minimize: () => Promise<void>;
       hide: () => Promise<void>;
       getAppVersion: () => Promise<string>;
+      openUserGuide: () => Promise<
+        { ok: true; path: string } | { ok: false; error: string }
+      >;
       listDisplays: () => Promise<
         {
           id: number;
@@ -116,6 +119,12 @@ declare global {
         | { ok: true; data: import("@/types/weather").WeatherForecastData }
         | { ok: false; error: string }
       >;
+      searchWeatherPlaces: (
+        query: string,
+      ) => Promise<
+        | { ok: true; places: import("@/types/weather").WeatherGeocodePlace[] }
+        | { ok: false; error: string }
+      >;
       searchNeisSchools: (
         query: string,
         apiKey?: string,
@@ -132,6 +141,16 @@ declare global {
       >;
       exportBackup: () => Promise<BackupResult>;
       importBackup: () => Promise<BackupResult>;
+      pickDockShortcut: (
+        currentCount: number,
+      ) => Promise<
+        | { ok: true; item: import("@/types/state").DockShortcutItem }
+        | { ok: false; cancelled: true }
+        | { ok: false; error: string }
+      >;
+      launchDockShortcut: (
+        sourcePath: string,
+      ) => Promise<{ ok: true } | { ok: false; error: string }>;
       checkForUpdates: () => Promise<
         { ok: true; status: "checking" } | { ok: false; error: string }
       >;

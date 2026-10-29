@@ -5,10 +5,6 @@ import type {
   TodayGlanceSections,
 } from "@/types/state";
 import { defaultTodayGlanceSections } from "@/utils/todayGlance";
-import {
-  DEFAULT_SETTINGS_DOCK_X,
-  DEFAULT_SETTINGS_DOCK_Y,
-} from "@/utils/settingsDockPosition";
 import { DesignSettingsSection } from "@/components/DesignSettingsSection";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
@@ -28,7 +24,10 @@ import { useNeisKeyStatus } from "@/hooks/useNeisKeyStatus";
 import { NeisAppKeyAdminPanel } from "@/widgets/NeisAppKeyAdminPanel";
 import { ComciganTimetableSection } from "@/components/ComciganTimetableSection";
 import { SchoolSearchPanel } from "@/widgets/SchoolSearchPanel";
+import { WeatherPlaceSearch } from "@/widgets/WeatherPlaceSearch";
 import { WorkPortalSettingsSection } from "@/widgets/WorkPortalSettingsSection";
+import { DockShortcutsSettingsSection } from "@/components/settings/DockShortcutsSettingsSection";
+import type { DockShortcutItem } from "@/types/state";
 import {
   LAYOUT_PRESET_OPTIONS,
   WIDGET_TOGGLE_LABELS,
@@ -71,6 +70,20 @@ function disabledEqual(a: string[], b: string[]): boolean {
   return sa.every((v, i) => v === sb[i]);
 }
 
+function dockShortcutsEqual(
+  a: DockShortcutItem[],
+  b: DockShortcutItem[],
+): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (item, i) =>
+      item.id === b[i].id &&
+      item.label === b[i].label &&
+      item.sourcePath === b[i].sourcePath &&
+      item.iconDataUrl === b[i].iconDataUrl,
+  );
+}
+
 function settingsEqual(a: AppSettings, b: AppSettings): boolean {
   return (
     a.theme === b.theme &&
@@ -94,6 +107,7 @@ function settingsEqual(a: AppSettings, b: AppSettings): boolean {
     a.widgetLockToScreen === b.widgetLockToScreen &&
     a.settingsDockX === b.settingsDockX &&
     a.settingsDockY === b.settingsDockY &&
+    dockShortcutsEqual(a.dockShortcuts, b.dockShortcuts) &&
     a.globalShortcuts === b.globalShortcuts &&
     a.weatherLabel === b.weatherLabel &&
     a.weatherLat === b.weatherLat &&
@@ -464,24 +478,13 @@ export function SettingsWidget({
             )}
 
             <SettingsRow
-              title="설정 독"
-              hint="하단 톱니바퀴를 끌어 원하는 위치에 놓을 수 있습니다. 두 번 누르면 아래 중앙으로 돌아갑니다."
+              title="자주 쓰는 앱"
+              hint="「앱 바로가기» 위젯에 표시됩니다. 제목줄을 끌어 원하는 위치·크기로 고정하세요. 설정 → 카드에서 위젯을 끌 수 있습니다."
             >
-              <button
-                type="button"
-                className="settings-inline-btn"
-                onClick={() => {
-                  const next = {
-                    ...draft,
-                    settingsDockX: DEFAULT_SETTINGS_DOCK_X,
-                    settingsDockY: DEFAULT_SETTINGS_DOCK_Y,
-                  };
-                  setDraft(next);
-                  void onSave(next);
-                }}
-              >
-                설정 독 위치 초기화
-              </button>
+              <DockShortcutsSettingsSection
+                shortcuts={draft.dockShortcuts}
+                onChange={(dockShortcuts) => patch({ dockShortcuts })}
+              />
             </SettingsRow>
 
             <SettingsRow
@@ -592,14 +595,23 @@ export function SettingsWidget({
 
             <SettingsRow
               title="날씨"
-              hint="Open-Meteo 무료 API · 위도·경도는 지역에 맞게 조정하세요."
+              hint="Open-Meteo 무료 API · 학교 선택 시 좌표가 자동 설정되며, 아래 검색으로 세부 위치를 고를 수 있습니다."
             >
               <div className="settings-field-stack">
+                <WeatherPlaceSearch
+                  onPick={(place, label) =>
+                    patch({
+                      weatherLat: place.lat,
+                      weatherLon: place.lon,
+                      weatherLabel: label,
+                    })
+                  }
+                />
                 <input
                   className="settings-control"
                   value={draft.weatherLabel}
                   onChange={(e) => patch({ weatherLabel: e.target.value })}
-                  placeholder="지역 이름 (예: 서울)"
+                  placeholder="지역 이름 (표시용)"
                 />
                 <div className="settings-coord-row">
                   <label className="settings-coord-field">
@@ -673,6 +685,29 @@ export function SettingsWidget({
             className="settings-tab-pane"
             aria-label={labelForSettingsTab("help")}
           >
+            <SettingsRow
+              title="사용 설명서"
+              hint="카드·설정·학교 연동·내선번호 등 기능별 안내입니다."
+            >
+              <p className="settings-plain-text">
+                브라우저에서 목차와 함께 볼 수 있습니다. 설치 폴더{" "}
+                <code>docs/사용설명서.html</code>과 같은 내용이에요.
+              </p>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ marginTop: 8 }}
+                onClick={() => {
+                  void window.schoolUtil?.openUserGuide?.().then((res) => {
+                    if (res && !res.ok) {
+                      window.alert(res.error);
+                    }
+                  });
+                }}
+              >
+                사용 설명서 열기
+              </button>
+            </SettingsRow>
             <SettingsRow title="단축키">
               <ul className="settings-help-list">
                 <li><kbd>Ctrl+Alt+D</kbd> — 위젯 숨기기 / 다시 맨 앞에 보기</li>
@@ -681,8 +716,8 @@ export function SettingsWidget({
             </SettingsRow>
             <SettingsRow title="위젯 모드">
               <p className="settings-plain-text">
-                카드 밖 영역은 바탕화면이 보입니다. 설정은 하단 톱니바퀴 또는 제목줄
-                버튼에서 엽니다.
+                카드 밖 영역은 바탕화면이 보입니다. 설정은 제목줄 톱니바퀴,
+                내선번호는 전화 아이콘으로 엽니다.
               </p>
             </SettingsRow>
             <SettingsRow title="문서">

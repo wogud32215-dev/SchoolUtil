@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AppSettings, PersistedState, TimetableData } from "./store";
 import { isWidgetId } from "./widget-ids";
 import { normalizeSettings } from "./settings-normalize";
+import { normalizeExtensionDirectory } from "./extensions-normalize";
 
 function defaultTimetableForImport(): TimetableData {
   const periodCount = 7;
@@ -26,6 +27,7 @@ function mergeLegacyStateInput(raw: unknown): Record<string, unknown> {
     timetable: input.timetable ?? defaultTimetableForImport(),
     layout: input.layout ?? {},
     settings: input.settings,
+    extensions: input.extensions,
   };
 }
 
@@ -37,6 +39,7 @@ const TOP_KEYS: (keyof PersistedState)[] = [
   "timetable",
   "layout",
   "settings",
+  "extensions",
 ];
 
 const MAX_TODOS = 500;
@@ -198,6 +201,9 @@ export function validatePatch(partial: unknown): Partial<PersistedState> {
         if (settings) out.settings = settings;
         break;
       }
+      case "extensions":
+        out.extensions = normalizeExtensionDirectory(value);
+        break;
       default:
         break;
     }
@@ -232,5 +238,12 @@ export function validateFullState(raw: unknown): PersistedState {
     timetable: patch.timetable,
     layout: patch.layout,
     settings,
+    extensions:
+      patch.extensions ??
+      normalizeExtensionDirectory(
+        raw && typeof raw === "object"
+          ? (raw as Record<string, unknown>).extensions
+          : undefined,
+      ),
   };
 }

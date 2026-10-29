@@ -8,6 +8,7 @@ import type {
   FontWeightLevel,
   UiDensity,
 } from "@/types/state";
+import { FONT_FAMILY_OPTIONS } from "@/utils/fontFamily";
 import { FONT_WEIGHT_LEVEL_OPTIONS } from "@/utils/fontWeightLevel";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import {
@@ -240,24 +241,18 @@ export function DesignSettingsSection({ settings, onDesignSave }: Props) {
 
       <SettingsRow title="글꼴" hint="앱에 포함된 글꼴을 골라 바로 적용합니다.">
         <div className="design-option-row" role="radiogroup" aria-label="글꼴">
-          <button
-            type="button"
-            className="design-chip"
-            role="radio"
-            aria-checked={settings.fontFamily === "pretendard"}
-            onClick={() => void applyFont("pretendard")}
-          >
-            Pretendard (기본)
-          </button>
-          <button
-            type="button"
-            className="design-chip"
-            role="radio"
-            aria-checked={settings.fontFamily === "system"}
-            onClick={() => void applyFont("system")}
-          >
-            시스템 기본
-          </button>
+          {FONT_FAMILY_OPTIONS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              className="design-chip"
+              role="radio"
+              aria-checked={settings.fontFamily === id}
+              onClick={() => void applyFont(id)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </SettingsRow>
 

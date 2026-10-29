@@ -23,3 +23,11 @@ export type WeatherForecastData = {
   hourlyToday: WeatherHourlyRow[];
   daily: WeatherDailyRow[];
 };
+
+export type WeatherGeocodePlace = {
+  name: string;
+  lat: number;
+  lon: number;
+  admin1: string;
+  country: string;
+};

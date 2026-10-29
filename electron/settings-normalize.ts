@@ -12,6 +12,13 @@ import {
   DEFAULT_SETTINGS_DOCK_X,
   DEFAULT_SETTINGS_DOCK_Y,
 } from "../src/utils/settingsDockPosition";
+import path from "node:path";
+import {
+  MAX_DOCK_SHORTCUTS,
+  isAllowedDockLaunchPath,
+} from "./dock-shortcut";
+import type { DockShortcutItem } from "../src/types/state";
+import { FONT_FAMILY_SETTINGS } from "../src/utils/fontFamily";
 
 const FONT_WEIGHT_LEVELS = [
   "light",
@@ -106,6 +113,7 @@ export const defaultAppSettings = (): AppSettings => ({
   widgetLockToScreen: true,
   settingsDockX: DEFAULT_SETTINGS_DOCK_X,
   settingsDockY: DEFAULT_SETTINGS_DOCK_Y,
+  dockShortcuts: [],
   globalShortcuts: true,
   disabledWidgets: [],
   todayGlanceEnabled: true,
@@ -159,6 +167,36 @@ function normalizeComciganTeacherIndex(raw: unknown): number {
   return Math.min(n, 9999);
 }
 
+function normalizeDockShortcuts(raw: unknown): DockShortcutItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: DockShortcutItem[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const rec = entry as Record<string, unknown>;
+    const id = typeof rec.id === "string" ? rec.id.trim().slice(0, 48) : "";
+    const label =
+      typeof rec.label === "string" ? rec.label.trim().slice(0, 60) : "";
+    const sourcePath =
+      typeof rec.sourcePath === "string"
+        ? rec.sourcePath.trim().slice(0, 500)
+        : "";
+    const iconRaw =
+      typeof rec.iconDataUrl === "string" ? rec.iconDataUrl : "";
+    const iconDataUrl =
+      iconRaw.startsWith("data:image/") ? iconRaw.slice(0, 96_000) : "";
+    if (!id || !sourcePath || !iconDataUrl) continue;
+    if (!isAllowedDockLaunchPath(sourcePath)) continue;
+    out.push({
+      id,
+      label: label || path.basename(sourcePath, path.extname(sourcePath)),
+      sourcePath,
+      iconDataUrl,
+    });
+    if (out.length >= MAX_DOCK_SHORTCUTS) break;
+  }
+  return out;
+}
+
 export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
   const base = defaultAppSettings();
   if (!raw || typeof raw !== "object") return base;
@@ -167,12 +205,11 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     ? (raw.theme as AppSettings["theme"])
     : base.theme;
 
-  const fontFamily: AppSettings["fontFamily"] =
-    raw.fontFamily === "system"
-      ? "system"
-      : raw.fontFamily === "pretendard"
-        ? "pretendard"
-        : base.fontFamily;
+  const fontFamily: AppSettings["fontFamily"] = FONT_FAMILY_SETTINGS.includes(
+    raw.fontFamily as AppSettings["fontFamily"],
+  )
+    ? (raw.fontFamily as AppSettings["fontFamily"])
+    : base.fontFamily;
 
   const fontWeightLevel: AppSettings["fontWeightLevel"] =
     FONT_WEIGHT_LEVELS.includes(
@@ -256,6 +293,7 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     widgetLockToScreen,
     settingsDockX,
     settingsDockY,
+    dockShortcuts: normalizeDockShortcuts(raw.dockShortcuts),
     globalShortcuts: raw.globalShortcuts !== false,
     onboardingDone: Boolean(raw.onboardingDone),
     disabledWidgets: Array.isArray(raw.disabledWidgets)

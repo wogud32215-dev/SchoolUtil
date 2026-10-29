@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PersistedState } from "@/types/state";
 import { defaultTimetable } from "@/utils/timetable";
+import { defaultExtensionDirectory } from "@/data/defaultExtensionDirectory";
 
 const fallback: PersistedState = {
   todos: [],
@@ -33,6 +34,7 @@ const fallback: PersistedState = {
     widgetLockToScreen: true,
     settingsDockX: 50,
     settingsDockY: 94,
+    dockShortcuts: [],
     globalShortcuts: true,
     disabledWidgets: [],
     todayGlanceEnabled: true,
@@ -90,6 +92,7 @@ const fallback: PersistedState = {
     timetableLastSyncReason: "",
     timetableSubstituteNotifiedKey: "",
   },
+  extensions: defaultExtensionDirectory(),
 };
 
 export function usePersistedState() {

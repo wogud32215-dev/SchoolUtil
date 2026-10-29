@@ -11,7 +11,6 @@ const SHAPE_SELECTORS = [
   ".onboarding-banner",
   ".persist-banner",
   ".update-prompt-banner",
-  ".app-settings-dock",
   ".settings-modal",
   ".settings-modal-backdrop",
   ".cal-day-modal",

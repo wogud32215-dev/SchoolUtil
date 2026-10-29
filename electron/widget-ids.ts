@@ -9,6 +9,7 @@ export const WIDGET_IDS = [
   "timetable",
   "schoolsched",
   "workportal",
+  "quicklaunch",
   "settings",
 ] as const;
 

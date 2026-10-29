@@ -38,6 +38,18 @@
   --font-sans: "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
 }
 
+[data-font="noto-sans-kr"] {
+  --font-sans: "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+[data-font="ibm-plex-sans-kr"] {
+  --font-sans: "IBM Plex Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
+}
+
+[data-font="gowun-dodum"] {
+  --font-sans: "Gowun Dodum", "Malgun Gothic", sans-serif;
+}
+
 [data-font-weight="light"] {
   --type-body: 350;
   --type-emphasis: 450;

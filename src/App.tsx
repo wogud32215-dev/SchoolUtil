@@ -27,9 +27,11 @@ import { TodoWidget } from "@/widgets/TodoWidget";
 import { WeatherWidget } from "@/widgets/WeatherWidget";
 import { MemoWidget } from "@/widgets/MemoWidget";
 import { WorkPortalWidget } from "@/widgets/WorkPortalWidget";
-import { AppSettingsDock } from "@/components/AppSettingsDock";
+import { QuickLaunchWidget } from "@/widgets/QuickLaunchWidget";
 import { SettingsModal } from "@/components/SettingsModal";
 import { SettingsIcon } from "@/components/SettingsIcon";
+import { PhoneIcon } from "@/components/PhoneIcon";
+import { ExtensionDirectoryModal } from "@/components/ExtensionDirectoryModal";
 import { WidgetHeaderIcon } from "@/components/WidgetHeaderIcon";
 import { TodayGlanceModal } from "@/components/TodayGlanceModal";
 import { ComciganSubstituteModal } from "@/components/ComciganSubstituteModal";
@@ -45,7 +47,7 @@ import {
 } from "@/utils/todayGlance";
 
 const WIDGET_INTERACTIVE_SELECTOR =
-  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .update-prompt-banner, .app-settings-dock, .settings-modal, .settings-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
+  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .update-prompt-banner, .settings-modal, .settings-modal-backdrop, .extension-modal, .extension-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
 
 function toGridLayout(
   ids: WidgetId[],
@@ -119,6 +121,10 @@ function renderWidgetBody(
       return <SchoolScheduleWidget settings={state.settings} />;
     case "workportal":
       return <WorkPortalWidget settings={state.settings} />;
+    case "quicklaunch":
+      return (
+        <QuickLaunchWidget shortcuts={state.settings.dockShortcuts} />
+      );
     case "settings":
       return null;
     default:
@@ -134,6 +140,7 @@ export default function App() {
   const [pinned, setPinned] = useState(false);
   const [desktopLayerWarn, setDesktopLayerWarn] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [extensionsOpen, setExtensionsOpen] = useState(false);
   const [todayGlanceOpen, setTodayGlanceOpen] = useState(false);
   const [todayGlancePreviewEmpty, setTodayGlancePreviewEmpty] = useState(false);
   const [substituteAlertOpen, setSubstituteAlertOpen] = useState(false);
@@ -339,8 +346,8 @@ export default function App() {
 
   const layoutKey = useMemo(
     () =>
-      `${JSON.stringify(layout)}-${activeIds.join(",")}-settings:${settingsOpen}-glance:${todayGlanceOpen}`,
-    [layout, activeIds, settingsOpen, todayGlanceOpen],
+      `${JSON.stringify(layout)}-${activeIds.join(",")}-settings:${settingsOpen}-ext:${extensionsOpen}-glance:${todayGlanceOpen}`,
+    [layout, activeIds, settingsOpen, extensionsOpen, todayGlanceOpen],
   );
   const theme = state?.settings.theme ?? "sky";
   const fontFamily = state?.settings.fontFamily ?? "pretendard";
@@ -491,8 +498,8 @@ export default function App() {
       {electronOk && !state.settings.onboardingDone && (
         <div className="onboarding-banner" role="region" aria-label="처음 설정">
           <span>
-            학교 이름을 검색해 선택해 보세요. 하단 톱니바퀴 «설정 → 학교 연동»에서 할
-            수 있습니다.
+            학교 이름을 검색해 선택해 보세요. 제목줄 «설정» → «학교 연동»에서 할 수
+            있습니다.
           </span>
           <button
             type="button"
@@ -551,6 +558,15 @@ export default function App() {
               {pinned ? "바탕화면으로" : "숨기기"}
             </button>
           )}
+          <button
+            type="button"
+            className="title-bar-settings-btn"
+            title="내선번호"
+            aria-label="내선번호 열기"
+            onClick={() => setExtensionsOpen(true)}
+          >
+            <PhoneIcon size={18} />
+          </button>
           <button
             type="button"
             className="title-bar-settings-btn"
@@ -615,24 +631,6 @@ export default function App() {
           ))}
         </GridLayout>
       </main>
-      <AppSettingsDock
-        x={state.settings.settingsDockX}
-        y={state.settings.settingsDockY}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onPositionCommit={(settingsDockX, settingsDockY) => {
-          void patch({
-            settings: {
-              ...state.settings,
-              settingsDockX,
-              settingsDockY,
-            },
-          });
-        }}
-        onDragEnd={() => {
-          scheduleWindowShapeUpdate();
-          runShapeBurst(120);
-        }}
-      />
       <SettingsModal
         open={settingsOpen}
         settings={state.settings}
@@ -641,6 +639,15 @@ export default function App() {
         onApplyLayoutPreset={applyLayoutPreset}
         onResetLayout={() => void patch({ layout: {} })}
         onPreviewTodayGlance={previewTodayGlance}
+      />
+      <ExtensionDirectoryModal
+        open={extensionsOpen}
+        directory={state.extensions}
+        onClose={() => setExtensionsOpen(false)}
+        onSave={(extensions) => {
+          void patch({ extensions });
+          setExtensionsOpen(false);
+        }}
       />
       <TodayGlanceModal
         open={todayGlanceOpen}

@@ -132,7 +132,12 @@ export type AppTheme =
   | "green"
   | "dark";
 
-export type FontFamilySetting = "pretendard" | "system";
+export type FontFamilySetting =
+  | "pretendard"
+  | "system"
+  | "noto-sans-kr"
+  | "ibm-plex-sans-kr"
+  | "gowun-dodum";
 
 /** 앱 전체 글자 굵기 (5단계) */
 export type FontWeightLevel =
@@ -180,6 +185,16 @@ export type TodayGlanceSections = {
 /** 컴시간 시간표에 표시할 학급 이름 방식 */
 export type ComciganClassLabelMode = "general" | "jeil";
 
+/** 설정 독에 표시하는 앱 바로가기 (Windows .lnk 등) */
+export type DockShortcutItem = {
+  id: string;
+  label: string;
+  /** 사용자가 고른 .lnk·exe 등 (실행 경로) */
+  sourcePath: string;
+  /** PNG data URL (앱 아이콘 미리보기) */
+  iconDataUrl: string;
+};
+
 export type AppSettings = {
   theme: AppTheme;
   fontFamily: FontFamilySetting;
@@ -210,6 +225,8 @@ export type AppSettings = {
   settingsDockX: number;
   /** 설정 독 세로 위치 (화면 %, 중심) */
   settingsDockY: number;
+  /** 설정 독 옆 자주 쓰는 앱 바로가기 */
+  dockShortcuts: DockShortcutItem[];
   globalShortcuts: boolean;
   /** 끈 위젯 id 목록 (설정 카드는 항상 표시) */
   disabledWidgets: string[];
@@ -286,8 +303,12 @@ export type NeisSchoolRow = {
   schoolCode: string;
   name: string;
   address: string;
+  locationName: string;
   kind: string;
 };
+
+export type { ExtensionContact, ExtensionDirectory, ExtensionSection } from "./extensions";
+import type { ExtensionDirectory } from "./extensions";
 
 export type LayoutItem = { x: number; y: number; w: number; h: number };
 
@@ -299,4 +320,5 @@ export type PersistedState = {
   timetable: TimetableData;
   layout: Record<string, LayoutItem>;
   settings: AppSettings;
+  extensions: ExtensionDirectory;
 };

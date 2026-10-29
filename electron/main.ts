@@ -22,6 +22,11 @@ import {
   quitAndInstall,
 } from "./auto-update";
 import { exportStateToFile, importStateFromFile } from "./backup";
+import {
+  launchDockShortcut,
+  MAX_DOCK_SHORTCUTS,
+  pickDockShortcut,
+} from "./dock-shortcut";
 import { fetchSchoolSchedule } from "./neis";
 import { fetchMeals } from "./neis-meal";
 import { searchSchools } from "./neis-school";
@@ -32,6 +37,8 @@ import {
   writeAppNeisKeyForAdmin,
 } from "./neis-key-resolve";
 import { fetchCurrentWeather, fetchWeatherForecast } from "./open-meteo";
+import { searchPlaces } from "./open-meteo-geocode";
+import { resolveUserGuideHtmlPath } from "./user-guide";
 import { normalizeSettings } from "./settings-normalize";
 import {
   isBrityMessengerAutomationBusy,
@@ -901,6 +908,29 @@ function registerIpc() {
     }
   });
 
+  ipcMain.handle(
+    "dock:pick-shortcut",
+    async (_event, payload: { currentCount?: number }) => {
+      const n =
+        typeof payload?.currentCount === "number" &&
+        Number.isFinite(payload.currentCount)
+          ? Math.max(0, Math.floor(payload.currentCount))
+          : 0;
+      return pickDockShortcut(Math.min(n, MAX_DOCK_SHORTCUTS));
+    },
+  );
+
+  ipcMain.handle(
+    "dock:launch",
+    async (_event, payload: { sourcePath?: string }) => {
+      const sourcePath = payload?.sourcePath;
+      if (typeof sourcePath !== "string") {
+        return { ok: false as const, error: "경로 형식이 올바르지 않습니다." };
+      }
+      return launchDockShortcut(sourcePath);
+    },
+  );
+
   ipcMain.handle("neis:key-status", () => {
     return getNeisKeyStatus(getState().settings);
   });
@@ -949,6 +979,15 @@ function registerIpc() {
   ipcMain.handle("app:minimize", () => mainWindow?.minimize());
   ipcMain.handle("app:hide", () => mainWindow?.hide());
   ipcMain.handle("app:version", () => app.getVersion());
+
+  ipcMain.handle("app:open-user-guide", async () => {
+    const filePath = resolveUserGuideHtmlPath();
+    const err = await shell.openPath(filePath);
+    if (err) {
+      return { ok: false as const, error: err || "설명서 파일을 열 수 없습니다." };
+    }
+    return { ok: true as const, path: filePath };
+  });
 
   ipcMain.handle("shell:openExternal", (_event, url: string) => {
     if (typeof url !== "string" || !isAllowedExternalUrl(url)) {
@@ -1192,6 +1231,24 @@ function registerIpc() {
       };
     }
   });
+
+  ipcMain.handle(
+    "weather:search-places",
+    async (_event, payload: { query?: string }) => {
+      try {
+        const query = typeof payload?.query === "string" ? payload.query : "";
+        return await searchPlaces(query);
+      } catch (e) {
+        return {
+          ok: false as const,
+          error:
+            e instanceof Error
+              ? e.message
+              : "지역 검색 처리 중 오류가 발생했습니다.",
+        };
+      }
+    },
+  );
 
   ipcMain.handle(
     "neis:schedule",
