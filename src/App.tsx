@@ -517,6 +517,8 @@ export default function App() {
           version={appUpdate.version}
           phase={appUpdate.phase}
           percent={appUpdate.percent}
+          transferred={appUpdate.transferred}
+          total={appUpdate.total}
           error={appUpdate.error}
           onDismissAvailable={appUpdate.dismissAvailable}
           onDeferInstall={appUpdate.deferInstall}

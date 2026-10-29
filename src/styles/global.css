@@ -175,8 +175,73 @@ select {
   font-size: 0.85rem;
 }
 
+.update-prompt-banner--downloading {
+  background: rgba(37, 99, 235, 0.32);
+  animation: update-prompt-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes update-prompt-pulse {
+  0%,
+  100% {
+    border-bottom-color: rgba(96, 165, 250, 0.45);
+  }
+  50% {
+    border-bottom-color: rgba(147, 197, 253, 0.85);
+  }
+}
+
+.update-prompt-banner-body {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .update-prompt-banner-text {
-  flex: 1 1 200px;
+  font-weight: 600;
+}
+
+.update-prompt-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.update-prompt-progress-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.35);
+  overflow: hidden;
+}
+
+.update-prompt-progress-track--pending .update-prompt-progress-fill {
+  animation: update-prompt-indeterminate 1.1s ease-in-out infinite;
+}
+
+@keyframes update-prompt-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.update-prompt-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #60a5fa, #2563eb);
+  transition: width 0.25s ease;
+}
+
+.update-prompt-progress-detail {
+  font-size: 0.8rem;
+  color: rgba(226, 232, 240, 0.95);
+  font-variant-numeric: tabular-nums;
 }
 
 .update-prompt-banner-error {

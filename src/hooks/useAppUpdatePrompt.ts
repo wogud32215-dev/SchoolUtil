@@ -7,6 +7,8 @@ type UpdateStatusPayload = {
   version: string | null;
   downloadPhase: "idle" | "downloading" | "downloaded";
   downloadPercent: number;
+  downloadTransferred: number;
+  downloadTotal: number;
   lastError: string | null;
   checking: boolean;
 };
@@ -51,6 +53,8 @@ export function useAppUpdatePrompt({
   const [version, setVersion] = useState<string | null>(null);
   const [phase, setPhase] = useState<AppUpdateUiPhase>("idle");
   const [percent, setPercent] = useState(0);
+  const [transferred, setTransferred] = useState(0);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const syncFromStatus = useCallback(
@@ -63,6 +67,8 @@ export function useAppUpdatePrompt({
       setVersion(s.version);
       setPhase(phaseFromStatus(s));
       setPercent(s.downloadPercent);
+      setTransferred(s.downloadTransferred);
+      setTotal(s.downloadTotal);
       if (s.lastError) {
         setError(s.lastError);
       }
@@ -100,6 +106,8 @@ export function useAppUpdatePrompt({
     const unProg = window.schoolUtil?.onUpdateProgress?.((payload) => {
       setPhase("downloading");
       setPercent(payload.percent);
+      setTransferred(payload.transferred);
+      setTotal(payload.total);
     });
     return () => {
       unAvail?.();
@@ -126,6 +134,8 @@ export function useAppUpdatePrompt({
     setError(null);
     setPhase("downloading");
     setPercent(0);
+    setTransferred(0);
+    setTotal(0);
     const res = await window.schoolUtil?.downloadUpdate?.();
     if (!res?.ok) {
       setPhase("available");
@@ -147,6 +157,8 @@ export function useAppUpdatePrompt({
     version,
     phase,
     percent,
+    transferred,
+    total,
     error,
     dismissAvailable,
     deferInstall,

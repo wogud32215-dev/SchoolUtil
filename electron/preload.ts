@@ -164,8 +164,15 @@ const api = {
     ipcRenderer.on("update:error", handler);
     return () => ipcRenderer.removeListener("update:error", handler);
   },
-  onUpdateProgress: (listener: (payload: { percent: number }) => void) => {
-    const handler = (_event: IpcRendererEvent, payload: { percent: number }) => {
+  onUpdateProgress: (listener: (payload: {
+    percent: number;
+    transferred: number;
+    total: number;
+  }) => void) => {
+    const handler = (
+      _event: IpcRendererEvent,
+      payload: { percent: number; transferred: number; total: number },
+    ) => {
       listener(payload);
     };
     ipcRenderer.on("update:progress", handler);

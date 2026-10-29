@@ -10,6 +10,8 @@ export type UpdateStatus = {
   version: string | null;
   downloadPhase: UpdateDownloadPhase;
   downloadPercent: number;
+  downloadTransferred: number;
+  downloadTotal: number;
   lastError: string | null;
   checking: boolean;
 };
@@ -21,6 +23,8 @@ const status: UpdateStatus = {
   version: null,
   downloadPhase: "idle",
   downloadPercent: 0,
+  downloadTransferred: 0,
+  downloadTotal: 0,
   lastError: null,
   checking: false,
 };
@@ -92,8 +96,12 @@ export function initAutoUpdate(mainWindow: () => BrowserWindow | null): void {
   autoUpdater.on("download-progress", (p) => {
     status.downloadPhase = "downloading";
     status.downloadPercent = p.percent;
+    status.downloadTransferred = p.transferred;
+    status.downloadTotal = p.total;
     sendToRenderer("update:progress", {
       percent: p.percent,
+      transferred: p.transferred,
+      total: p.total,
     });
   });
 
@@ -143,7 +151,14 @@ export async function downloadUpdate(): Promise<
   try {
     status.downloadPhase = "downloading";
     status.downloadPercent = 0;
+    status.downloadTransferred = 0;
+    status.downloadTotal = 0;
     status.lastError = null;
+    sendToRenderer("update:progress", {
+      percent: 0,
+      transferred: 0,
+      total: 0,
+    });
     await autoUpdater.downloadUpdate();
     return { ok: true };
   } catch (e) {
