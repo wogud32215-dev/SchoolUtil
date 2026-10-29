@@ -1,6 +1,6 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.1**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.2**
 
 ## 다운로드 (설치)
 
