@@ -1,22 +1,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveUiaScriptPath } from "./uia-script-path";
 
 export type UiaCertResult =
   | { ok: true; windowHwnd: bigint; filled: boolean; trusted?: boolean }
   | { ok: false; reason: string };
 
-function resolveUiaScriptPath(): string {
-  const dir = path.dirname(fileURLToPath(import.meta.url));
-  const names = ["portal-cert-uia.ps1"];
-  for (const base of [dir, path.join(dir, "..", "electron")]) {
-    for (const name of names) {
-      const full = path.join(base, name);
-      if (fs.existsSync(full)) return full;
-    }
-  }
-  return path.join(dir, "portal-cert-uia.ps1");
+function resolveUiaScriptPathLocal(): string {
+  return resolveUiaScriptPath("portal-cert-uia.ps1");
 }
 
 /**
@@ -30,7 +21,7 @@ export async function tryCertPasswordViaUia(
     return { ok: false, reason: "비밀번호 없음" };
   }
 
-  const scriptPath = resolveUiaScriptPath();
+  const scriptPath = resolveUiaScriptPathLocal();
   if (!fs.existsSync(scriptPath)) {
     return { ok: false, reason: "portal-cert-uia.ps1 없음" };
   }

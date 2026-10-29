@@ -2529,6 +2529,7 @@
   box-shadow: none;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   transition: border-color 0.15s ease;
 }
 
@@ -2571,17 +2572,10 @@
 .memo-note textarea {
   width: 100%;
   min-height: 76px;
-  max-height: 200px;
   margin: 0;
-  padding: 0 28px 0 0;
-  border: none;
-  background: transparent;
-  resize: vertical;
   font-size: 0.86rem;
   line-height: 1.5;
   color: var(--text);
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
 }
 
 .memo-note textarea::placeholder {
@@ -2590,19 +2584,6 @@
 
 .memo-note textarea:focus {
   outline: none;
-}
-
-.memo-note textarea::-webkit-scrollbar {
-  width: 5px;
-}
-
-.memo-note textarea::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--text-muted) 40%, transparent);
-}
-
-.memo-note textarea::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--text-muted) 60%, transparent);
 }
 
 /* —— 업무포털 —— */

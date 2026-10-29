@@ -1,7 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveUiaScriptPath } from "./uia-script-path";
 
 const GOV_CERT_LOGIN_UIA_TIMEOUT_MS = 10_000;
 
@@ -10,10 +9,7 @@ export type GovCertLoginUiaResult =
   | { ok: false; reason: string };
 
 function resolveScriptPath(): string {
-  const dir = path.dirname(fileURLToPath(import.meta.url));
-  const full = path.join(dir, "brity-gov-cert-login-uia.ps1");
-  if (fs.existsSync(full)) return full;
-  return path.join(dir, "..", "electron", "brity-gov-cert-login-uia.ps1");
+  return resolveUiaScriptPath("brity-gov-cert-login-uia.ps1");
 }
 
 /** Brity 로그인 후 새 창의 «교육행정 전자서명 인증서 로그인» 단추를 누릅니다. */

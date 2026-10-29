@@ -1,7 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveUiaScriptPath } from "./uia-script-path";
 
 const UIA_SCRIPT_TIMEOUT_MS = 12_000;
 
@@ -14,10 +13,7 @@ export type BrityUiaProbeResult =
   | { ok: false; reason: string };
 
 function resolveScriptPath(): string {
-  const dir = path.dirname(fileURLToPath(import.meta.url));
-  const full = path.join(dir, "brity-messenger-uia.ps1");
-  if (fs.existsSync(full)) return full;
-  return path.join(dir, "..", "electron", "brity-messenger-uia.ps1");
+  return resolveUiaScriptPath("brity-messenger-uia.ps1");
 }
 
 function runBrityUiaScript(

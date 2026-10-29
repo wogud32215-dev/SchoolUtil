@@ -1,11 +1,11 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.0**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.1**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-1.0.0.exe`
+파일 이름 예: `SchoolUtil-Setup-1.0.1.exe`
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»와 **업데이트 확인**으로 새 버전을 받을 수 있습니다.
 
@@ -95,7 +95,7 @@ npm run typecheck
 npm run dist
 ```
 
-`release/` 폴더에 NSIS 설치 프로그램(예: `SchoolUtil-Setup-1.0.0.exe`)과 자동 업데이트용 `latest.yml`이 생성됩니다.
+`release/` 폴더에 NSIS 설치 프로그램(예: `SchoolUtil-Setup-1.0.1.exe`)과 자동 업데이트용 `latest.yml`이 생성됩니다.
 
 설치만 빠르게 확인하려면:
 
@@ -156,7 +156,7 @@ git push origin v1.0.1
 
 | 단계 | 확인 내용 |
 |------|-----------|
-| **신규 설치** | Releases의 Setup exe 실행 → 설정에 «설치 버전 1.0.0» 표시 |
+| **신규 설치** | Releases의 Setup exe 실행 → 설정에 «설치 버전 1.0.1» 표시 |
 | **덮어쓰기** | 같은 `appId`로 새 Setup을 다시 실행 → `%APPDATA%\SchoolUtil\schoolutil-data.json` 유지 |
 | **업데이트 없음** | 설치판에서 **업데이트 확인** → «현재 최신 버전입니다.» |
 | **업데이트 있음** | 더 높은 버전을 Releases에 올린 뒤 **업데이트 확인** → 다운로드·재시작 안내 |
@@ -204,6 +204,12 @@ npm run dist
 코드 서명 도구 오류로 `npm run dist`가 실패하면 PowerShell에서 `$env:CSC_IDENTITY_AUTO_DISCOVERY='false'` 를 설정한 뒤 다시 실행하세요.
 
 `appId`(`com.schoolutil.app`)와 store 이름(`schoolutil-data`)을 바꾸지 않으면 재설치 후에도 데이터가 유지됩니다.
+
+## 변경 (1.0.1)
+
+- **메모**: 쪽지 높이가 글자 수에 맞춰 아래로 자동 늘어남
+- **위젯 모드**: Ctrl+Alt+D 전역 단축키 등록이 풀렸을 때 자동 복구·한글 키보드 보강
+- **Brity·업무포털 UIA**: 설치본에 PowerShell 스크립트 포함 (`asarUnpack`), dev와 동일하게 자동 로그인 시도
 
 ## 기능 (1.0.0)
 

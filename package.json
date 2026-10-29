@@ -1,6 +1,6 @@
 {
   "name": "schoolutil",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SchoolUtil — Windows 바탕화면 종합 유틸",
   "main": "dist-electron/bootstrap.js",
   "author": "SchoolUtil",
@@ -23,9 +23,11 @@
     "clean:build": "rimraf dist dist-electron",
     "clean": "npm run clean:build && rimraf release",
     "prebuild": "npm run clean:build",
-    "build": "node scripts/prepare-neis-shared.mjs && tsc -b && vite build",
+    "build": "node scripts/prepare-neis-shared.mjs && tsc -b && vite build && node scripts/copy-uia-scripts.mjs",
     "dist": "npm run build && electron-builder --win",
     "dist:dir": "npm run build && electron-builder --win --dir",
+    "dist:staging": "npm run build && electron-builder --win --config.directories.output=release-staging",
+    "dist:dir:staging": "npm run build && electron-builder --win --dir --config.directories.output=release-staging",
     "dist:publish": "npm run build && electron-builder --win --publish always",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
@@ -66,6 +68,9 @@
       "output": "release",
       "buildResources": "build"
     },
+    "asarUnpack": [
+      "dist-electron/**/*.ps1"
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*"

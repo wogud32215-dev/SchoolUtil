@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { MemoNote } from "@/types/state";
 import { newId } from "@/utils/id";
 
 /** 새 쪽지 기본 틴트(저장값은 그대로, CSS에서 은은하게 섞음) */
 const COLORS = ["#e8e4d4", "#ebe4ec", "#dfe8f2", "#e2ebe6"];
 const SAVE_DEBOUNCE_MS = 400;
+const MEMO_TEXTAREA_MIN_PX = 76;
 
 type Props = {
   memos: MemoNote[];
@@ -23,8 +31,28 @@ function MemoNoteEditor({ memo, onCommit, onRemove }: MemoNoteEditorProps) {
   const saveTimerRef = useRef<number | null>(null);
   const focusedRef = useRef(false);
   const latestTextRef = useRef(memo.text);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   latestTextRef.current = text;
+
+  const syncTextareaHeight = useCallback((keepVisualHeight = false) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const preserved = keepVisualHeight
+      ? el.getBoundingClientRect().height
+      : MEMO_TEXTAREA_MIN_PX;
+    el.style.height = `${MEMO_TEXTAREA_MIN_PX}px`;
+    const needed = el.scrollHeight;
+    el.style.height = `${Math.max(MEMO_TEXTAREA_MIN_PX, needed, preserved)}px`;
+  }, []);
+
+  useLayoutEffect(() => {
+    syncTextareaHeight();
+  }, [text, syncTextareaHeight]);
+
+  useLayoutEffect(() => {
+    syncTextareaHeight();
+  }, [memo.id, syncTextareaHeight]);
 
   useEffect(() => {
     if (focusedRef.current) return;
@@ -78,14 +106,17 @@ function MemoNoteEditor({ memo, onCommit, onRemove }: MemoNoteEditorProps) {
         ×
       </button>
       <textarea
+        ref={textareaRef}
         value={text}
         placeholder="메모..."
+        rows={1}
         onFocus={() => {
           focusedRef.current = true;
         }}
         onBlur={() => {
           focusedRef.current = false;
           flushSave();
+          syncTextareaHeight(true);
         }}
         onCompositionStart={() => {
           composingRef.current = true;
@@ -93,6 +124,7 @@ function MemoNoteEditor({ memo, onCommit, onRemove }: MemoNoteEditorProps) {
         onCompositionEnd={(e) => {
           composingRef.current = false;
           applyValue(e.currentTarget.value);
+          syncTextareaHeight();
         }}
         onChange={(e) => {
           const next = e.target.value;
@@ -100,6 +132,14 @@ function MemoNoteEditor({ memo, onCommit, onRemove }: MemoNoteEditorProps) {
           latestTextRef.current = next;
           if (composingRef.current) return;
           scheduleSave();
+          requestAnimationFrame(() => {
+            syncTextareaHeight();
+          });
+        }}
+        onInput={() => {
+          requestAnimationFrame(() => {
+            syncTextareaHeight();
+          });
         }}
       />
     </div>

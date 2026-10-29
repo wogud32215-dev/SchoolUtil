@@ -1,17 +1,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveUiaScriptPath } from "./uia-script-path";
 
 export type EdufineUiaClickResult =
   | { ok: true; windowTitle: string; buttonName?: string }
   | { ok: false; reason: string };
 
 function resolveScriptPath(): string {
-  const dir = path.dirname(fileURLToPath(import.meta.url));
-  const full = path.join(dir, "portal-edufine-uia.ps1");
-  if (fs.existsSync(full)) return full;
-  return path.join(dir, "..", "electron", "portal-edufine-uia.ps1");
+  return resolveUiaScriptPath("portal-edufine-uia.ps1");
 }
 
 function runEdufineUiaScript(

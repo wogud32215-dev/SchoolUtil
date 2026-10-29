@@ -6,6 +6,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  powerMonitor,
   screen,
   shell,
   Tray,
@@ -462,6 +463,24 @@ function unregisterGlobalShortcuts() {
   globalShortcut.unregister(EMERGENCY_SHORTCUT);
 }
 
+/** Windows에서 슬립·다른 앱과의 충돌 등으로 등록이 풀리는 경우가 있어 주기적으로 복구한다. */
+function ensureGlobalShortcutsRegistered() {
+  if (!globalShortcutsEnabled()) {
+    unregisterGlobalShortcuts();
+    return;
+  }
+  const pinOk = globalShortcut.isRegistered(PIN_SHORTCUT);
+  const emergencyOk = globalShortcut.isRegistered(EMERGENCY_SHORTCUT);
+  if (pinOk && emergencyOk) return;
+  registerGlobalShortcuts();
+}
+
+function isPinShortcutKeyInput(input: Electron.Input): boolean {
+  if (input.code === "KeyD") return true;
+  const key = input.key?.toLowerCase();
+  return key === "d" || key === "ㅇ";
+}
+
 function runPinShortcut() {
   try {
     togglePinToFront();
@@ -514,8 +533,7 @@ function attachWindowShortcutHandler(win: BrowserWindow) {
   win.webContents.on("before-input-event", (event, input) => {
     if (input.type !== "keyDown") return;
     if (!globalShortcutsEnabled()) return;
-    const key = input.key?.toLowerCase();
-    if (key !== "d") return;
+    if (!isPinShortcutKeyInput(input)) return;
     const mod = input.control || input.meta;
     if (!mod || !input.alt) return;
 
@@ -618,6 +636,7 @@ function createWindow(): BrowserWindow {
   });
 
   mainWindow.on("focus", () => {
+    ensureGlobalShortcutsRegistered();
     if (isWidgetMode() && !pinnedToFront) {
       syncWidgetDesktopLayer();
     }
@@ -816,10 +835,15 @@ function registerIpc() {
     const prevMode = prev.displayMode;
     const prevMonitor = prev.widgetMonitor;
     const prevLock = prev.widgetLockToScreen;
+    const prevGlobalShortcuts = prev.globalShortcuts;
     const next = patchState(partial as Partial<PersistedState>);
     const settings = normalizeSettings(next.settings);
     applyLoginItem(settings.openAtLogin);
-    registerGlobalShortcuts();
+    if (prevGlobalShortcuts !== settings.globalShortcuts) {
+      registerGlobalShortcuts();
+    } else {
+      ensureGlobalShortcutsRegistered();
+    }
     recreateWindowIfNeeded(prevMode);
     if (
       isWidgetMode(settings) &&
@@ -1222,6 +1246,17 @@ app.whenReady().then(() => {
   initAutoUpdate(() => mainWindow);
   applyLoginItem(getState().settings.openAtLogin);
   registerGlobalShortcuts();
+  ensureGlobalShortcutsRegistered();
+  powerMonitor.on("resume", () => {
+    ensureGlobalShortcutsRegistered();
+  });
+  powerMonitor.on("unlock-screen", () => {
+    ensureGlobalShortcutsRegistered();
+  });
+  const shortcutHealTimer = setInterval(() => {
+    ensureGlobalShortcutsRegistered();
+  }, 30_000);
+  shortcutHealTimer.unref?.();
   applyPortalSettings(getState().settings);
   refreshTimetableScheduler(getState().settings);
 

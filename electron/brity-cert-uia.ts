@@ -1,7 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveUiaScriptPath } from "./uia-script-path";
 
 const ROUND_WAIT_SEC = 7;
 const ROUND_COUNT = 8;
@@ -20,10 +19,7 @@ type RoundJson = {
 };
 
 function resolveScriptPath(): string {
-  const dir = path.dirname(fileURLToPath(import.meta.url));
-  const full = path.join(dir, "brity-cert-uia.ps1");
-  if (fs.existsSync(full)) return full;
-  return path.join(dir, "..", "electron", "brity-cert-uia.ps1");
+  return resolveUiaScriptPath("brity-cert-uia.ps1");
 }
 
 function killPowerShellTree(child: ChildProcess | null): void {
