@@ -1,6 +1,6 @@
 {
   "name": "schoolutil",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "SchoolUtil — Windows 바탕화면 종합 유틸",
   "main": "dist-electron/bootstrap.js",
   "author": "SchoolUtil",
