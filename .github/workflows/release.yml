@@ -37,6 +37,19 @@ jobs:
 
       - run: npm ci
 
+      - name: Prepare NEIS shared key for release build
+        shell: pwsh
+        env:
+          NEIS_SHARED_KEY: ${{ secrets.NEIS_SHARED_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NEIS_SHARED_KEY)) {
+            Write-Error "Repository secret NEIS_SHARED_KEY is missing. GitHub repo → Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          }
+          New-Item -ItemType Directory -Force -Path config | Out-Null
+          $key = $env:NEIS_SHARED_KEY.Trim()
+          Set-Content -Path config/neis-shared.key -Value $key -Encoding utf8NoBOM
+
       - run: npm run typecheck
 
       - name: Build installer and publish to GitHub Releases

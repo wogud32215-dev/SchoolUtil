@@ -132,12 +132,7 @@ export type AppTheme =
   | "green"
   | "dark";
 
-export type FontFamilySetting =
-  | "pretendard"
-  | "system"
-  | "noto-sans-kr"
-  | "ibm-plex-sans-kr"
-  | "gowun-dodum";
+export type FontFamilySetting = "pretendard" | "system";
 
 /** 앱 전체 글자 굵기 (5단계) */
 export type FontWeightLevel =

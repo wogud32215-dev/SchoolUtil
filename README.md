@@ -150,6 +150,18 @@ git push origin v1.0.1
 
 4. [Actions → Release](https://github.com/wogud32215-dev/SchoolUtil/actions)가 성공하면 [Releases](https://github.com/wogud32215-dev/SchoolUtil/releases)에 설치 파일이 생깁니다.
 
+### 공용 NEIS 키 (GitHub Releases)
+
+Releases 설치본에 **앱 공용 NEIS 키**를 넣으려면 저장소에 secret을 한 번 등록합니다. 키 값은 Git에 커밋하지 않습니다.
+
+1. [나이스 Open API](https://open.neis.go.kr/)에서 발급한 **인증키 한 줄**을 준비합니다.
+2. GitHub 저장소 **Settings → Secrets and variables → Actions → New repository secret**
+3. Name: **`NEIS_SHARED_KEY`**, Value: API 키만 붙여 넣기 → **Add secret**
+4. `.github/workflows/release.yml`이 이 secret으로 `config/neis-shared.key`를 만든 뒤 `npm run dist` 합니다.
+5. secret 등록 **이후** 태그를 다시 푸시해 Release를 돌립니다 (이미 올린 1.0.3 Setup에는 키가 없을 수 있음 → **새 버전 태그** 또는 태그 삭제 후 재푸시).
+
+로컬 빌드는 기존처럼 `config/neis-shared.key` 파일(`.gitignore`)을 쓰면 됩니다. `config/neis-shared.key.example` 참고.
+
 **릴리스 = 사용자 알림:** 설치판 앱은 실행 후 약 8초 뒤·12시간마다·절전 복귀 시 GitHub에서 새 버전을 확인합니다. 새 버전이 있으면 **화면 상단 배너**와 (창이 가려져 있으면) **Windows 알림**으로 안내하며, «지금 받기»로 Setup을 내려받아 재시작 설치할 수 있습니다. 별도 푸시 서버는 없습니다.
 
 ### 사용자에게 GitHub 설치 1회 안내 (배포자)
@@ -216,7 +228,7 @@ npm run dist
 
 ## 변경 (1.0.3)
 
-- **글꼴**: 설정 표기 «기본»·«시스템 글꼴»로 정리, Noto Sans·IBM Plex·고운 돋움 추가
+- **글꼴**: 설정 표기 «기본»·«시스템 글꼴»로 정리 (추가 웹 글꼴은 설치 용량 문제로 제외)
 
 ## 변경 (1.0.1)
 
@@ -230,7 +242,7 @@ npm run dist
 
 - **위젯**: 시계, 날씨, 급식, 달력, D-Day, 메모, 할 일, 시간표, 학사일정, 업무포털 — 설정에서 카드 켜기/끄기 (설정 UI는 그리드가 아니라 **하단 독·모달**)
 - **반응형 배치** · 드래그로 위치 조정 · 레이아웃 프리셋(벤토, 클래식, 달력/시간표 중심, 간결, 와이드)
-- **테마·글꼴·밀도·카드 투명도** (글꼴: 기본, 시스템, Noto Sans, IBM Plex, 고운 돋움) · 시작 프로그램 등록
+- **테마·글꼴·밀도·카드 투명도** · 시작 프로그램 등록
 - **«제일 메이트»**: 실행 시 하루 한 번 오늘 할 일·시간표·급식 등 요약 모달 (설정에서 on/off)
 
 ### 창 · 트레이 · 위젯 모드
@@ -250,7 +262,7 @@ npm run dist
 
 - **학교 검색**: NEIS `schoolInfo`로 학교 선택 → 교육청·학교 코드 자동 입력
 - **학사일정** · **급식**: [나이스 Open API](https://open.neis.go.kr/) (이번 달·오늘)
-- **NEIS API 키**: Windows `safeStorage` 암호화 (평문 JSON은 첫 실행 시 이전). 빌드 시 `config/neis-shared.key`를 넣으면 설치본에 **공용 키** 포함 가능 (GitHub Actions 기본 빌드에는 없음)
+- **NEIS API 키**: Windows `safeStorage` 암호화 (평문 JSON은 첫 실행 시 이전). 빌드 시 `config/neis-shared.key`를 넣으면 설치본에 **공용 키** 포함. **GitHub Releases**는 Actions secret `NEIS_SHARED_KEY`로 같은 키를 빌드에 넣습니다 (아래 «공용 NEIS 키 (GitHub)»).
 - **날씨**: Open-Meteo (기본 서울, 설정에서 좌표·라벨)
 
 ### 데이터 · 업데이트

@@ -135,12 +135,7 @@ export type AppTheme =
   | "green"
   | "dark";
 
-export type FontFamilySetting =
-  | "pretendard"
-  | "system"
-  | "noto-sans-kr"
-  | "ibm-plex-sans-kr"
-  | "gowun-dodum";
+export type FontFamilySetting = "pretendard" | "system";
 
 export type FontWeightLevel =
   | "light"
