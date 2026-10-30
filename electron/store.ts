@@ -16,7 +16,11 @@ import {
 } from "./secrets";
 import type { PortalId } from "./portal-ids";
 import { validatePatch } from "./validate-patch";
-import { normalizeExtensionDirectory } from "./extensions-normalize";
+import {
+  EXTENSION_DATA_REV,
+  extensionDirectoryRevision,
+  normalizeExtensionDirectory,
+} from "./extensions-normalize";
 import { defaultExtensionDirectory } from "../src/data/defaultExtensionDirectory";
 
 export type PortalRunRecord = {
@@ -381,6 +385,13 @@ export function initPersistence(): void {
     String(raw?.portalGoePassword ?? "").trim();
   if (hadPlainOnDisk) {
     appStore.set("settings", stripped);
+  }
+
+  const rawExtensions = appStore.get("extensions");
+  const normExtensions = normalizeExtensionDirectory(rawExtensions);
+  const targetRev = normExtensions.dataRev ?? EXTENSION_DATA_REV;
+  if (extensionDirectoryRevision(rawExtensions) < targetRev) {
+    appStore.set("extensions", normExtensions);
   }
 }
 

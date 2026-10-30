@@ -1,11 +1,11 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.4**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.5**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-1.0.4.exe`
+파일 이름 예: `SchoolUtil-Setup-1.0.5.exe`
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»를 볼 수 있습니다. 새 버전은 **설정을 열지 않아도** 상단 배너로 안내되며, 필요할 때 «업데이트 확인»으로 수동 확인도 할 수 있습니다.
 
@@ -225,6 +225,10 @@ npm run dist
 코드 서명 도구 오류로 `npm run dist`가 실패하면 PowerShell에서 `$env:CSC_IDENTITY_AUTO_DISCOVERY='false'` 를 설정한 뒤 다시 실행하세요.
 
 `appId`(`com.schoolutil.app`)와 store 이름(`schoolutil-data`)을 바꾸지 않으면 재설치 후에도 데이터가 유지됩니다.
+
+## 변경 (1.0.5)
+
+- **내선번호**: 2026.7.1 학교 배치도(PDF) 기준 진학지원부 내선 보정 — 기존 설치본도 앱 업데이트·재실행 시 자동 반영(`dataRev` 마이그레이션)
 
 ## 변경 (1.0.4)
 

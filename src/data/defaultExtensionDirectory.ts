@@ -1,4 +1,8 @@
-import type { ExtensionContact, ExtensionSection } from "../types/extensions";
+import type {
+  ExtensionContact,
+  ExtensionDirectory,
+  ExtensionSection,
+} from "../types/extensions";
 
 function contact(label: string, extension: string): ExtensionContact {
   const slug = `${extension}-${label}`.replace(/\s+/g, "");
@@ -98,10 +102,10 @@ export function defaultExtensionSections(): ExtensionSection[] {
       contact("허선미", "395"),
     ]),
     section("본관 · 3–4층 · 실습동", "진학지원부", 30, [
-      contact("김현승", "251"),
-      contact("이재원", "252"),
-      contact("전윤주", "254"),
-      contact("이태영", "284"),
+      contact("김현승", "254"),
+      contact("이재원", "284"),
+      contact("전윤주", "251"),
+      contact("이태영", "252"),
       contact("박준규", "324"),
     ]),
     section("본관 · 3–4층", "특수교육부", 31, [
@@ -214,8 +218,6 @@ export function defaultExtensionSections(): ExtensionSection[] {
   ];
 }
 
-export function defaultExtensionDirectory(): {
-  sections: ExtensionSection[];
-} {
-  return { sections: defaultExtensionSections() };
+export function defaultExtensionDirectory(): ExtensionDirectory {
+  return { sections: defaultExtensionSections(), dataRev: 2 };
 }

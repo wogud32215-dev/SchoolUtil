@@ -112,7 +112,7 @@ export function ExtensionDirectoryModal({
         },
       ];
     }
-    persistDraft({ sections: nextSections });
+    persistDraft({ ...draft, sections: nextSections });
     setNewArea("");
     setNewDept("");
     setNewLabel("");
@@ -121,6 +121,7 @@ export function ExtensionDirectoryModal({
 
   function removeContact(sectionId: string, contactId: string) {
     persistDraft({
+      ...draft,
       sections: draft.sections
         .map((s) =>
           s.id === sectionId
