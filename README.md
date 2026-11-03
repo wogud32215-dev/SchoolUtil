@@ -1,11 +1,11 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.5**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.7**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-1.0.5.exe`
+파일 이름 예: `SchoolUtil-Setup-1.0.7.exe`
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»를 볼 수 있습니다. 새 버전은 **설정을 열지 않아도** 상단 배너로 안내되며, 필요할 때 «업데이트 확인»으로 수동 확인도 할 수 있습니다.
 
@@ -226,6 +226,26 @@ npm run dist
 
 `appId`(`com.schoolutil.app`)와 store 이름(`schoolutil-data`)을 바꾸지 않으면 재설치 후에도 데이터가 유지됩니다.
 
+### 문의·요청 (관리자 · 릴리스 빌드)
+
+앱 **제목줄 «문의하기»** 또는 **설정 → 안내 → 문의·요청 보내기**에서 «문의»/«기능 요청»을 작성하면 [FormSubmit](https://formsubmit.co/)으로 관리자 이메일에 전달됩니다. NEIS 키·포털 비밀번호 등은 보내지 않습니다.
+
+1. **최초 1회**: 앱에서 문의를 보내면 FormSubmit이 수신 주소로 **«Activate Form»** 메일을 보냅니다. **스팸함·프로모션함**도 확인한 뒤 링크를 눌러야 이후 전송이 도착합니다. (활성화 전에는 앱에 «FormSubmit 활성화가 필요합니다» 안내가 표시됩니다.)
+2. **릴리스 빌드**: 기본 수신 주소가 앱에 포함됩니다. 다른 주소로 받으려면 빌드 전 (PowerShell 예):
+   ```powershell
+   $env:SCHOOLUTIL_FEEDBACK_EMAIL = "other@email.com"
+   npm run dist
+   ```
+3. **받은편지함 정리**: 제목이 `[SchoolUtil]`로 시작하므로 메일 규칙·필터에 활용하세요.
+
+## 변경 (1.0.7)
+
+- **문의·요청**: Web3Forms로 이메일 전송 (로컬·릴리스 빌드에 `config/web3forms-access.key` 포함 시). 키가 없으면 FormSubmit fallback
+
+## 변경 (1.0.6)
+
+- **문의·요청**: 설정 «안내»에서 문의·기능 요청 작성 후 이메일 전송 (FormSubmit, `SCHOOLUTIL_FEEDBACK_EMAIL`)
+
 ## 변경 (1.0.5)
 
 - **내선번호**: 2026.7.1 학교 배치도(PDF) 기준 진학지원부 내선 보정 — 기존 설치본도 앱 업데이트·재실행 시 자동 반영(`dataRev` 마이그레이션)
@@ -277,6 +297,7 @@ npm run dist
 ### 데이터 · 업데이트
 
 - **저장**: `%APPDATA%\SchoolUtil\schoolutil-data.json` · 저장 시 자동 백업
+- **문의·요청**: 설정 «안내»에서 개발자에게 이메일 전송 (릴리스 빌드에 수신 주소 설정 시)
 - **JSON 보내기/불러오기** (구버전·필드 누락 데이터도 느슨하게 복원)
 - **자동 업데이트**: 설치판 `electron-updater` — GitHub Releases(기본) · 설정에서 업데이트 확인
 

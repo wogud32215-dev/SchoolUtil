@@ -24,6 +24,11 @@ export type ComciganTeacherOption = {
   label: string;
 };
 
+export type ComciganClassOption = {
+  classCode: string;
+  label: string;
+};
+
 export function decodeComciResponseText(buf: Buffer): string {
   const utf8 = buf.toString("utf8");
   if (utf8.includes("자료") || utf8.includes("학교검색")) {
@@ -187,6 +192,46 @@ export function listTeachersFromTimetableJson(
   const teachers = data[`자료${teacherCode}`] as string[] | undefined;
   if (!teachers) return [];
   return buildComciganTeacherOptions(teachers);
+}
+
+export function listClassesFromFull(
+  full: ComciganLessonCell[][][][],
+  labelForCode: (classCode: string) => string,
+): ComciganClassOption[] {
+  const options: ComciganClassOption[] = [];
+  for (let g = 0; g < full.length; g++) {
+    const grade = full[g];
+    for (let c = 0; c < grade.length; c++) {
+      const classCode = String((g + 1) * 100 + (c + 1));
+      options.push({
+        classCode,
+        label: labelForCode(classCode),
+      });
+    }
+  }
+  return options;
+}
+
+export function resolveComciganClassIndices(
+  full: ComciganLessonCell[][][][],
+  classCode: string,
+): { gradeIndex: number; classIndex: number } | { error: string } {
+  const trimmed = classCode.trim();
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n < 100) {
+    return { error: "학급을 선택해 주세요." };
+  }
+  const grade = Math.floor(n / 100);
+  const classNum = n % 100;
+  if (grade < 1 || classNum < 1) {
+    return { error: "학급을 선택해 주세요." };
+  }
+  const gradeIndex = grade - 1;
+  const classIndex = classNum - 1;
+  if (!full[gradeIndex]?.[classIndex]) {
+    return { error: "선택한 학급을 시간표에서 찾지 못했습니다." };
+  }
+  return { gradeIndex, classIndex };
 }
 
 export function resolveComciganTeacherIndex(

@@ -1,6 +1,6 @@
 {
   "name": "schoolutil",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "SchoolUtil — Windows 바탕화면 종합 유틸",
   "main": "dist-electron/bootstrap.js",
   "author": "SchoolUtil",
@@ -80,6 +80,10 @@
       {
         "from": "build/neis-shared.v1.bin",
         "to": "neis-shared.v1.bin"
+      },
+      {
+        "from": "build/web3forms-access.key",
+        "to": "web3forms-access.key"
       }
     ],
     "extraFiles": [

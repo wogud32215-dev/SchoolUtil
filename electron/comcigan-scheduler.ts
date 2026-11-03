@@ -1,6 +1,6 @@
 import { broadcastStoreState } from "./broadcast-state";
-import { syncTeacherTimetable } from "./comcigan/sync";
-import type { AppSettings } from "./store";
+import { syncClassTimetable, syncTeacherTimetable } from "./comcigan/sync";
+import type { AppSettings, ComciganSyncedTimetable } from "./store";
 import { getState, patchState } from "./store";
 
 const SYNC_HOURS = [8, 13];
@@ -48,17 +48,42 @@ export async function runTimetableAutoSync(
       return { ok: false, error: result.error };
     }
 
+    let classError = "";
+    let classSnapshot: ComciganSyncedTimetable | undefined;
     const prevTt = getState().timetable;
+    if (
+      settings.comciganClassSyncEnabled &&
+      settings.comciganClassCode.trim()
+    ) {
+      const classResult = await syncClassTimetable(
+        code,
+        settings.comciganClassCode,
+        settings.comciganClassLabelMode,
+        settings.timetableFetchMode,
+        settings.comciganSchoolName || settings.schoolName,
+        settings.timetableProxyBaseUrl,
+      );
+      if (!classResult.ok) {
+        classError = classResult.error;
+        classSnapshot = prevTt.comciganClass;
+      } else {
+        classSnapshot = classResult.timetable as ComciganSyncedTimetable;
+      }
+    } else {
+      classSnapshot = prevTt.comciganClass;
+    }
+
     patchState({
       timetable: {
         ...result.timetable,
         weeklyManual: prevTt.weeklyManual,
         weekManual: prevTt.weekManual,
+        comciganClass: classSnapshot,
       },
       settings: {
         ...getState().settings,
         timetableLastSyncAt: localIsoNow(),
-        timetableLastSyncError: "",
+        timetableLastSyncError: classError,
         timetableLastSyncVia: result.via,
         timetableLastSyncReason: reason,
       },

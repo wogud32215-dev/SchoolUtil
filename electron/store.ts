@@ -70,6 +70,8 @@ export type ComciganLessonChip = {
   subject: string;
   changed: boolean;
   originalSubject?: string;
+  /** 학급 시간표 칩: 담당 교사 */
+  teacherName?: string;
   vacated?: boolean;
   manual?: boolean;
   manualWeekly?: boolean;
@@ -102,6 +104,15 @@ export type ComciganTimetableView = {
   changes: TimetableSubstituteChange[];
 };
 
+/** 컴시간에서 받은 학급 시간표 (교사 시간표와 별도 보관) */
+export type ComciganSyncedTimetable = {
+  title: string;
+  periodCount: number;
+  grid: string[][];
+  substituteFlags?: boolean[][];
+  comciganView?: ComciganTimetableView;
+};
+
 export type TimetableData = {
   title: string;
   periodCount: number;
@@ -109,6 +120,7 @@ export type TimetableData = {
   /** 컴시간 교체 반영 셀 (grid와 동일 크기, 자동 갱신 시에만 채워짐) */
   substituteFlags?: boolean[][];
   comciganView?: ComciganTimetableView;
+  comciganClass?: ComciganSyncedTimetable;
   weeklyManual?: TimetableWeeklyManualSlot[];
   weekManual?: TimetableWeekManualSlot[];
 };
@@ -262,6 +274,12 @@ export type AppSettings = {
   /** 컴시간 교사 배열 인덱스 (동명이인 구분, -1 = 미선택) */
   comciganTeacherIndex: number;
   comciganClassLabelMode: ComciganClassLabelMode;
+  /** 학급 시간표도 컴시간에서 함께 받기 */
+  comciganClassSyncEnabled: boolean;
+  /** 컴시간 학급 코드 (예: 204 = 2학년 4반) */
+  comciganClassCode: string;
+  /** 시간표 위젯에서 보는 표 (교사 / 학급) */
+  timetableWidgetView: "teacher" | "class";
   timetableLastSyncAt: string;
   timetableLastSyncError: string;
   timetableLastSyncVia: "" | "direct" | "s2h9";
@@ -270,6 +288,8 @@ export type AppSettings = {
   timetableSubstituteNotifiedKey: string;
   /** 업데이트 배너에서 «나중에» 누른 버전 (semver 문자열) */
   dismissedUpdateVersion?: string;
+  /** 마지막으로 종료(또는 업데이트 확인)했을 때의 앱 버전 — 업그레이드 완료 배너용 */
+  lastLaunchedAppVersion?: string;
 };
 
 const PORTAL_LAST_RUN_KEY: Record<

@@ -1,5 +1,11 @@
 import { app, BrowserWindow, Notification } from "electron";
 import electronUpdater from "electron-updater";
+import { getState } from "./store";
+import {
+  notificationBodyForRelease,
+  resolveReleaseHighlights,
+} from "./release-notes";
+import { formatReleaseNotesForNotification } from "../src/data/releaseNotes";
 
 const { autoUpdater } = electronUpdater;
 
@@ -8,6 +14,7 @@ export type UpdateDownloadPhase = "idle" | "downloading" | "downloaded";
 export type UpdateStatus = {
   available: boolean;
   version: string | null;
+  releaseNotes: string[];
   downloadPhase: UpdateDownloadPhase;
   downloadPercent: number;
   downloadTransferred: number;
@@ -21,6 +28,7 @@ let mainWindowRef: (() => BrowserWindow | null) | null = null;
 const status: UpdateStatus = {
   available: false,
   version: null,
+  releaseNotes: [],
   downloadPhase: "idle",
   downloadPercent: 0,
   downloadTransferred: 0,
@@ -49,15 +57,17 @@ export function getUpdateStatus(): UpdateStatus {
   return { ...status };
 }
 
-function setAvailable(version: string): void {
+function setAvailable(version: string, updaterRaw: unknown): void {
+  const releaseNotes = resolveReleaseHighlights(version, updaterRaw);
   status.available = true;
   status.version = version;
+  status.releaseNotes = releaseNotes;
   status.lastError = null;
   status.checking = false;
-  sendToRenderer("update:available", { version });
+  sendToRenderer("update:available", { version, releaseNotes });
   showUpdateNotification(
     "SchoolUtil 업데이트",
-    `새 버전 ${version}이 있습니다. 앱을 열어 받을 수 있습니다.`,
+    notificationBodyForRelease(version, updaterRaw),
   );
 }
 
@@ -70,12 +80,13 @@ export function initAutoUpdate(mainWindow: () => BrowserWindow | null): void {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("update-available", (info) => {
-    setAvailable(info.version);
+    setAvailable(info.version, info.releaseNotes ?? info.releaseName);
   });
 
   autoUpdater.on("update-not-available", () => {
     status.available = false;
     status.version = null;
+    status.releaseNotes = [];
     status.checking = false;
     status.lastError = null;
     sendToRenderer("update:not-available", {});
@@ -109,15 +120,31 @@ export function initAutoUpdate(mainWindow: () => BrowserWindow | null): void {
     status.downloadPhase = "downloaded";
     status.downloadPercent = 100;
     status.lastError = null;
-    sendToRenderer("update:downloaded", {});
+    sendToRenderer("update:downloaded", {
+      version: status.version,
+      releaseNotes: status.releaseNotes,
+    });
     const ver = status.version;
     showUpdateNotification(
       "SchoolUtil 업데이트",
       ver
-        ? `버전 ${ver} 다운로드를 마쳤습니다. 앱을 열어 설치할 수 있습니다.`
+        ? `다운로드 완료 — ${formatReleaseNotesForNotification(ver, status.releaseNotes)}`
         : "업데이트 다운로드를 마쳤습니다. 앱을 열어 설치할 수 있습니다.",
     );
   });
+}
+
+/** 재시작 후 이전 실행 버전과 다를 때 OS 알림 (배너는 렌더러) */
+export function notifyIfAppWasUpgraded(): void {
+  if (!app.isPackaged) return;
+  const current = app.getVersion();
+  const last = getState().settings.lastLaunchedAppVersion?.trim() ?? "";
+  if (!last || last === current) return;
+  const highlights = resolveReleaseHighlights(current, null);
+  showUpdateNotification(
+    "SchoolUtil 업데이트 완료",
+    formatReleaseNotesForNotification(current, highlights),
+  );
 }
 
 export async function checkForUpdates(): Promise<
@@ -173,5 +200,5 @@ export async function downloadUpdate(): Promise<
 }
 
 export function quitAndInstall(): void {
-  autoUpdater.quitAndInstall();
+  autoUpdater.quitAndInstall(false, true);
 }

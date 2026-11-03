@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { AppSettings, ComciganTeacherOption } from "@/types/state";
+import type { AppSettings, ComciganClassOption, ComciganTeacherOption } from "@/types/state";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
 import { SettingsSegmented } from "@/components/settings/SettingsSegmented";
@@ -31,8 +31,10 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
   const [query, setQuery] = useState("");
   const [schools, setSchools] = useState<SchoolRow[]>([]);
   const [teachers, setTeachers] = useState<ComciganTeacherOption[]>([]);
+  const [classes, setClasses] = useState<ComciganClassOption[]>([]);
   const [searching, setSearching] = useState(false);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [loadingClasses, setLoadingClasses] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -67,8 +69,10 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         comciganTeacherIndex: -1,
       });
       setTeachers([]);
+      setClasses([]);
       if (!api?.listComciganTeachers) return;
       setLoadingTeachers(true);
+      setLoadingClasses(true);
       setStatus(null);
       try {
         const res = await api.listComciganTeachers({
@@ -81,12 +85,58 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
           return;
         }
         setTeachers(res.teachers);
+        if (api.listComciganClasses) {
+          const classRes = await api.listComciganClasses({
+            schoolCode: row.schoolCode,
+            mode: draft.timetableFetchMode,
+            proxyBaseUrl: draft.timetableProxyBaseUrl,
+            classLabelMode: draft.comciganClassLabelMode,
+          });
+          if (classRes.ok) {
+            setClasses(classRes.classes);
+          }
+        }
       } finally {
         setLoadingTeachers(false);
+        setLoadingClasses(false);
       }
     },
-    [api, draft.timetableFetchMode, draft.timetableProxyBaseUrl, onPatch],
+    [
+      api,
+      draft.timetableFetchMode,
+      draft.timetableProxyBaseUrl,
+      draft.comciganClassLabelMode,
+      onPatch,
+    ],
   );
+
+  const reloadClasses = useCallback(async () => {
+    const code = Number(draft.comciganSchoolCode);
+    if (!code || !api?.listComciganClasses) return;
+    setLoadingClasses(true);
+    setStatus(null);
+    try {
+      const res = await api.listComciganClasses({
+        schoolCode: code,
+        mode: draft.timetableFetchMode,
+        proxyBaseUrl: draft.timetableProxyBaseUrl,
+        classLabelMode: draft.comciganClassLabelMode,
+      });
+      if (!res.ok) {
+        setStatus(res.error);
+        return;
+      }
+      setClasses(res.classes);
+    } finally {
+      setLoadingClasses(false);
+    }
+  }, [
+    api,
+    draft.comciganSchoolCode,
+    draft.timetableFetchMode,
+    draft.timetableProxyBaseUrl,
+    draft.comciganClassLabelMode,
+  ]);
 
   const reloadTeachers = useCallback(async () => {
     const code = Number(draft.comciganSchoolCode);
@@ -288,6 +338,50 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
             {syncing ? "받는 중…" : "지금 가져오기"}
           </button>
         </div>
+      </SettingsRow>
+
+      <SettingsRow
+        title="학급 시간표 (컴시간)"
+        hint="담임·학생용 학급 표를 함께 받습니다. 시간표 위젯에서 «학생 시간표»로 전환해 볼 수 있습니다."
+      >
+        <SettingsCheckbox
+          checked={draft.comciganClassSyncEnabled}
+          onChange={(v) =>
+            onPatch({
+              comciganClassSyncEnabled: v,
+              ...(v ? {} : { timetableWidgetView: "teacher" as const }),
+            })
+          }
+        >
+          학급 시간표도 가져오기
+        </SettingsCheckbox>
+        {draft.comciganClassSyncEnabled ? (
+          <div className="settings-field-stack" style={{ marginTop: 10 }}>
+            <div className="input-row">
+              <select
+                className="settings-control"
+                value={draft.comciganClassCode}
+                onChange={(e) => onPatch({ comciganClassCode: e.target.value })}
+                disabled={!draft.comciganSchoolCode}
+              >
+                <option value="">학급을 고르세요</option>
+                {classes.map((row) => (
+                  <option key={row.classCode} value={row.classCode}>
+                    {row.label} (코드 {row.classCode})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="settings-inline-btn"
+                disabled={loadingClasses || !draft.comciganSchoolCode}
+                onClick={() => void reloadClasses()}
+              >
+                {loadingClasses ? "불러오는 중…" : "학급 목록"}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </SettingsRow>
 
       <SettingsRow title="갱신 상태">

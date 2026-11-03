@@ -154,6 +154,9 @@ export const defaultAppSettings = (): AppSettings => ({
   comciganTeacherName: "",
   comciganTeacherIndex: -1,
   comciganClassLabelMode: "general",
+  comciganClassSyncEnabled: false,
+  comciganClassCode: "",
+  timetableWidgetView: "teacher",
   timetableLastSyncAt: "",
   timetableLastSyncError: "",
   timetableLastSyncVia: "",
@@ -165,6 +168,12 @@ function normalizeComciganTeacherIndex(raw: unknown): number {
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) return -1;
   return Math.min(n, 9999);
+}
+
+function normalizeComciganClassCode(raw: unknown): string {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.slice(0, 4);
 }
 
 function normalizeDockShortcuts(raw: unknown): DockShortcutItem[] {
@@ -379,6 +388,10 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     comciganTeacherIndex: normalizeComciganTeacherIndex(raw.comciganTeacherIndex),
     comciganClassLabelMode:
       raw.comciganClassLabelMode === "general" ? "general" : "jeil",
+    comciganClassSyncEnabled: Boolean(raw.comciganClassSyncEnabled),
+    comciganClassCode: normalizeComciganClassCode(raw.comciganClassCode),
+    timetableWidgetView:
+      raw.timetableWidgetView === "class" ? "class" : "teacher",
     timetableLastSyncAt: String(raw.timetableLastSyncAt ?? "").slice(0, 40),
     timetableLastSyncError: String(raw.timetableLastSyncError ?? "").slice(
       0,
@@ -400,6 +413,10 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
     ).slice(0, 4000),
     dismissedUpdateVersion: (() => {
       const v = String(raw.dismissedUpdateVersion ?? "").trim();
+      return v ? v.slice(0, 32) : undefined;
+    })(),
+    lastLaunchedAppVersion: (() => {
+      const v = String(raw.lastLaunchedAppVersion ?? "").trim();
       return v ? v.slice(0, 32) : undefined;
     })(),
   };

@@ -1,9 +1,12 @@
 import type {
+  ComciganClassLabelMode,
   ComciganLessonChip,
+  ComciganSyncedTimetable,
   ComciganTimetableView,
   TimetableData,
   TimetableSubstituteChange,
 } from "../store";
+import { labelForComciganClassCode } from "./class-labels";
 import { periodStartTimes, weekDatesFromMonday } from "./week-meta";
 import { fetchBytes } from "./http";
 import {
@@ -14,15 +17,25 @@ import {
 } from "./routes";
 import {
   decodeComciResponseText,
+  listClassesFromFull,
   listTeachersFromTimetableJson,
   parseFullTimetable,
   parseSchoolSearch,
+  resolveComciganClassIndices,
   resolveComciganTeacherIndex,
+  type ComciganClassOption,
   type ComciganSchoolRow,
   type ComciganTeacherOption,
 } from "./parse";
 
-export type { ComciganSchoolRow, ComciganTeacherOption };
+export type { ComciganClassOption, ComciganSchoolRow, ComciganTeacherOption };
+
+function classLabelForMode(
+  classCode: string,
+  mode: ComciganClassLabelMode,
+): string {
+  return labelForComciganClassCode(classCode, mode);
+}
 
 export async function searchComciganSchools(
   query: string,
@@ -176,6 +189,153 @@ export function buildTeacherTimetableGrid(
   };
 
   return { periodCount, grid, substituteFlags, comciganView };
+}
+
+export function buildClassTimetableGrid(
+  full: ReturnType<typeof parseFullTimetable>,
+  gradeIndex: number,
+  classIndex: number,
+  classCode: string,
+): {
+  periodCount: number;
+  grid: string[][];
+  substituteFlags: boolean[][];
+  comciganView: ComciganTimetableView;
+} {
+  const dayCount = 5;
+  let maxPeriod = 0;
+  const grid: string[][] = Array.from({ length: dayCount }, () => []);
+  const substituteFlags: boolean[][] = Array.from({ length: dayCount }, () => []);
+  const weekDates = weekDatesFromMonday();
+  const changes: TimetableSubstituteChange[] = [];
+  let chips: ComciganLessonChip[][][] = [];
+  const classRow = full[gradeIndex]?.[classIndex];
+
+  if (!classRow) {
+    throw new Error("선택한 학급을 시간표에서 찾지 못했습니다.");
+  }
+
+  function ensureChipSlot(day: number, period: number): ComciganLessonChip[] {
+    if (!chips[day]) chips[day] = [];
+    if (!chips[day][period]) chips[day][period] = [];
+    return chips[day][period];
+  }
+
+  for (let d = 0; d < classRow.length && d < dayCount; d++) {
+    const day = classRow[d];
+    for (let p = 0; p < day.length; p++) {
+      const cell = day[p];
+      const subject = cell.subject?.trim() ?? "";
+      const teacher = cell.teacher?.trim() ?? "";
+      if (!subject && !teacher) continue;
+
+      maxPeriod = Math.max(maxPeriod, p + 1);
+      let text = subject;
+      if (teacher) {
+        text = text ? `${text} · ${teacher}` : teacher;
+      }
+      if (cell.changed) {
+        const orig = cell.originalSubject?.trim() ?? "";
+        text += orig ? ` (교체·원:${orig})` : ` (교체)`;
+      }
+      grid[d][p] = text;
+      ensureChipSlot(d, p).push({
+        classCode: "",
+        subject,
+        teacherName: teacher || undefined,
+        changed: cell.changed,
+        originalSubject: cell.originalSubject,
+      });
+      if (cell.changed) {
+        substituteFlags[d][p] = true;
+        const periodTime = periodStartTimes(Math.max(p + 1, 7))[p] ?? "";
+        changes.push({
+          dayIndex: d,
+          period: p + 1,
+          dateYmd: weekDates[d] ?? "",
+          periodTime,
+          classCode,
+          subject,
+          originalSubject: cell.originalSubject?.trim() || "—",
+        });
+      }
+    }
+  }
+
+  const periodCount = Math.min(12, Math.max(7, maxPeriod || 7));
+  const periodTimes = periodStartTimes(periodCount);
+  for (let d = 0; d < dayCount; d++) {
+    while (grid[d].length < periodCount) {
+      grid[d].push("");
+    }
+    while (substituteFlags[d].length < periodCount) {
+      substituteFlags[d].push(false);
+    }
+    if (!chips[d]) chips[d] = [];
+    for (let p = 0; p < periodCount; p++) {
+      if (!chips[d][p]) chips[d][p] = [];
+    }
+  }
+
+  changes.sort(
+    (a, b) =>
+      a.dayIndex - b.dayIndex ||
+      a.period - b.period ||
+      a.subject.localeCompare(b.subject),
+  );
+
+  const comciganView: ComciganTimetableView = {
+    weekDates,
+    periodTimes,
+    chips,
+    changes,
+  };
+
+  return { periodCount, grid, substituteFlags, comciganView };
+}
+
+export async function listComciganClasses(
+  schoolCode: number,
+  classLabelMode: ComciganClassLabelMode,
+): Promise<ComciganClassOption[]> {
+  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
+  const full = parseFullTimetable(jsonText, routes);
+  return listClassesFromFull(full, (code) =>
+    classLabelForMode(code, classLabelMode),
+  );
+}
+
+export async function fetchClassTimetableDirect(
+  schoolCode: number,
+  classCode: string,
+  classLabelMode: ComciganClassLabelMode,
+  schoolLabel?: string,
+): Promise<ComciganSyncedTimetable> {
+  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
+  const full = parseFullTimetable(jsonText, routes);
+  const resolved = resolveComciganClassIndices(full, classCode);
+  if ("error" in resolved) {
+    throw new Error(resolved.error);
+  }
+  const code = classCode.trim();
+  const label = classLabelForMode(code, classLabelMode);
+  const { periodCount, grid, substituteFlags, comciganView } =
+    buildClassTimetableGrid(
+      full,
+      resolved.gradeIndex,
+      resolved.classIndex,
+      code,
+    );
+  const title = schoolLabel?.trim()
+    ? `${label} · ${schoolLabel.trim()}`
+    : `${label} · 이번 주`;
+  return {
+    title,
+    periodCount,
+    grid,
+    substituteFlags,
+    comciganView,
+  };
 }
 
 export async function fetchTeacherTimetableDirect(

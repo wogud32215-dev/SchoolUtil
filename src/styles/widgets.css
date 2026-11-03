@@ -635,6 +635,35 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  flex: 1;
+}
+
+.tt-comcigan-view-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.tt-comcigan-view-switch__btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  border: 1px solid var(--widget-border, rgba(255, 255, 255, 0.2));
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+}
+
+.tt-comcigan-view-switch__btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 600;
+}
+
+.tt-comcigan-view-switch__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .tt-comcigan-only .tt-comcigan-scroll {

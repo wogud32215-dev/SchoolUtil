@@ -1,4 +1,4 @@
-import type { TimetableData } from "@/types/state";
+import type { ComciganSyncedTimetable, TimetableData } from "@/types/state";
 
 export function emptyGrid(periodCount: number): string[][] {
   return Array.from({ length: 5 }, () =>
@@ -8,6 +8,26 @@ export function emptyGrid(periodCount: number): string[][] {
 
 export function defaultTimetable(): TimetableData {
   return { title: "내 시간표", periodCount: 7, grid: emptyGrid(7) };
+}
+
+function normalizeComciganClassSnapshot(
+  raw: ComciganSyncedTimetable | undefined,
+): ComciganSyncedTimetable | undefined {
+  if (!raw?.comciganView) return undefined;
+  const norm = normalizeTimetable({
+    title: raw.title,
+    periodCount: raw.periodCount,
+    grid: raw.grid,
+    substituteFlags: raw.substituteFlags,
+    comciganView: raw.comciganView,
+  });
+  return {
+    title: norm.title,
+    periodCount: norm.periodCount,
+    grid: norm.grid,
+    substituteFlags: norm.substituteFlags,
+    comciganView: norm.comciganView,
+  };
 }
 
 export function normalizeTimetable(raw: TimetableData | undefined): TimetableData {
@@ -48,6 +68,7 @@ export function normalizeTimetable(raw: TimetableData | undefined): TimetableDat
     grid,
     substituteFlags,
     comciganView,
+    comciganClass: normalizeComciganClassSnapshot(base.comciganClass),
     weeklyManual,
     weekManual,
   };

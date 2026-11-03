@@ -15,6 +15,24 @@ const api = {
     ipcRenderer.invoke("app:open-user-guide") as Promise<
       { ok: true; path: string } | { ok: false; error: string }
     >,
+  submitFeedback: (payload: {
+    category: "inquiry" | "feature";
+    subject: string;
+    body: string;
+    replyEmail: string;
+  }) =>
+    ipcRenderer.invoke("feedback:submit", payload) as Promise<
+      { ok: true } | { ok: false; error: string }
+    >,
+  openFeedbackMailto: (payload: {
+    category: "inquiry" | "feature";
+    subject: string;
+    body: string;
+    replyEmail: string;
+  }) =>
+    ipcRenderer.invoke("feedback:open-mailto", payload) as Promise<
+      { ok: true } | { ok: false; error: string }
+    >,
   listDisplays: () =>
     ipcRenderer.invoke("screen:list-displays") as Promise<
       {
@@ -89,6 +107,16 @@ const api = {
       | { ok: true; teachers: import("../src/types/state").ComciganTeacherOption[] }
       | { ok: false; error: string }
     >,
+  listComciganClasses: (opts: {
+    schoolCode: number;
+    mode: "direct" | "s2h9";
+    proxyBaseUrl?: string;
+    classLabelMode: "general" | "jeil";
+  }) =>
+    ipcRenderer.invoke("comcigan:list-classes", opts) as Promise<
+      | { ok: true; classes: import("../src/types/state").ComciganClassOption[] }
+      | { ok: false; error: string }
+    >,
   syncComciganTeacherTimetable: () =>
     ipcRenderer.invoke("comcigan:sync-teacher") as Promise<
       | { ok: true }
@@ -159,15 +187,36 @@ const api = {
     ipcRenderer.on("widget:refresh-shape", handler);
     return () => ipcRenderer.removeListener("widget:refresh-shape", handler);
   },
-  onUpdateAvailable: (listener: (payload: { version: string }) => void) => {
-    const handler = (_event: IpcRendererEvent, payload: { version: string }) => {
-      listener(payload);
+  onUpdateAvailable: (
+    listener: (payload: { version: string; releaseNotes: string[] }) => void,
+  ) => {
+    const handler = (
+      _event: IpcRendererEvent,
+      payload: { version: string; releaseNotes?: string[] },
+    ) => {
+      listener({
+        version: payload.version,
+        releaseNotes: payload.releaseNotes ?? [],
+      });
     };
     ipcRenderer.on("update:available", handler);
     return () => ipcRenderer.removeListener("update:available", handler);
   },
-  onUpdateDownloaded: (listener: () => void) => {
-    const handler = () => listener();
+  onUpdateDownloaded: (
+    listener: (payload: {
+      version: string | null;
+      releaseNotes: string[];
+    }) => void,
+  ) => {
+    const handler = (
+      _event: IpcRendererEvent,
+      payload?: { version?: string | null; releaseNotes?: string[] },
+    ) => {
+      listener({
+        version: payload?.version ?? null,
+        releaseNotes: payload?.releaseNotes ?? [],
+      });
+    };
     ipcRenderer.on("update:downloaded", handler);
     return () => ipcRenderer.removeListener("update:downloaded", handler);
   },

@@ -10,6 +10,8 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const keyPath = path.join(root, "config", "neis-shared.key");
 const outPath = path.join(root, "build", "neis-shared.v1.bin");
+const web3formsKeyPath = path.join(root, "config", "web3forms-access.key");
+const web3formsOutPath = path.join(root, "build", "web3forms-access.key");
 
 const MAGIC = Buffer.from("SU1");
 const IV_LEN = 12;
@@ -45,4 +47,17 @@ if (payload.length) {
   console.log("[prepare-neis-shared] 공용 NEIS 키를 build/neis-shared.v1.bin 에 넣었습니다.");
 } else {
   console.log("[prepare-neis-shared] config/neis-shared.key 없음 — 공용 키 없이 빌드합니다.");
+}
+
+try {
+  const web3Plain = fs.readFileSync(web3formsKeyPath, "utf8");
+  fs.writeFileSync(web3formsOutPath, web3Plain);
+  console.log(
+    "[prepare-neis-shared] Web3Forms 키를 build/web3forms-access.key 에 복사했습니다.",
+  );
+} catch {
+  fs.writeFileSync(web3formsOutPath, "");
+  console.log(
+    "[prepare-neis-shared] config/web3forms-access.key 없음 — Web3Forms 없이 빌드합니다.",
+  );
 }

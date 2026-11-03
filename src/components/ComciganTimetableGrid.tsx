@@ -1,5 +1,6 @@
 import type {
   ComciganClassLabelMode,
+  ComciganLessonChip,
   ComciganTimetableView,
 } from "@/types/state";
 import {
@@ -11,6 +12,23 @@ import {
 import { formatLessonForDisplay } from "@/utils/jeilClassLabels";
 import { canEditManualSlot } from "@/utils/timetableManual";
 import { TIMETABLE_DAY_LABELS } from "@/utils/timetableSubstitute";
+
+function formatChipMain(
+  chip: ComciganLessonChip,
+  classLabelMode: ComciganClassLabelMode,
+): string {
+  if (chip.classCode.trim()) {
+    return formatLessonForDisplay(
+      chip.classCode,
+      chip.subject,
+      classLabelMode,
+    );
+  }
+  const subject = chip.subject.trim();
+  const teacher = chip.teacherName?.trim() ?? "";
+  if (subject && teacher) return `${subject} · ${teacher}`;
+  return subject || teacher;
+}
 
 type Props = {
   periodCount: number;
@@ -134,11 +152,7 @@ export function ComciganTimetableGrid({
                                 </span>
                               ) : null}
                               <span className="tt-comcigan-chip-main">
-                                {formatLessonForDisplay(
-                                  chip.classCode,
-                                  chip.subject,
-                                  classLabelMode,
-                                )}
+                                {formatChipMain(chip, classLabelMode)}
                               </span>
                               {chip.changed && chip.originalSubject ? (
                                 <span className="tt-comcigan-chip-orig">

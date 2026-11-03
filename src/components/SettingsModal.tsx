@@ -10,6 +10,7 @@ type Props = {
   onApplyLayoutPreset: (preset: LayoutPreset) => Promise<boolean>;
   onResetLayout: () => void;
   onPreviewTodayGlance?: () => void;
+  onOpenFeedback?: () => void;
 };
 
 export function SettingsModal({
@@ -20,6 +21,7 @@ export function SettingsModal({
   onApplyLayoutPreset,
   onResetLayout,
   onPreviewTodayGlance,
+  onOpenFeedback,
 }: Props) {
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
@@ -70,6 +72,7 @@ export function SettingsModal({
             onApplyLayoutPreset={onApplyLayoutPreset}
             onResetLayout={onResetLayout}
             onPreviewTodayGlance={onPreviewTodayGlance}
+            onOpenFeedback={onOpenFeedback}
           />
         </div>
       </div>

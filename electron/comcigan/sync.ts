@@ -1,8 +1,11 @@
-import type { TimetableData } from "../store";
+import type { ComciganClassLabelMode, TimetableData } from "../store";
 import {
+  fetchClassTimetableDirect,
   fetchTeacherTimetableDirect,
+  listComciganClasses,
   listComciganTeachers,
   searchComciganSchools,
+  type ComciganClassOption,
   type ComciganSchoolRow,
   type ComciganTeacherOption,
 } from "./direct";
@@ -37,6 +40,23 @@ export async function listTeachers(
     }
   }
   return listComciganTeachers(schoolCode);
+}
+
+export async function listClasses(
+  schoolCode: number,
+  mode: TimetableFetchMode,
+  classLabelMode: ComciganClassLabelMode,
+  proxyBaseUrl?: string,
+): Promise<ComciganClassOption[]> {
+  if (mode === "s2h9") {
+    try {
+      const session = await openS2h9Session(proxyBaseUrl);
+      await pingS2h9School(session, String(schoolCode));
+    } catch {
+      /* s2h9 연결 확인 실패 시에도 컴시간 목록 시도 */
+    }
+  }
+  return listComciganClasses(schoolCode, classLabelMode);
 }
 
 export async function syncTeacherTimetable(
@@ -80,6 +100,57 @@ export async function syncTeacherTimetable(
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "시간표를 받지 못했습니다.";
+    if (mode === "s2h9") {
+      return {
+        ok: false,
+        error: `${msg} (s2h9 연결은 확인됨 — 컴시간 직접 요청 실패)`,
+      };
+    }
+    return { ok: false, error: msg };
+  }
+}
+
+export async function syncClassTimetable(
+  schoolCode: number,
+  classCode: string,
+  classLabelMode: ComciganClassLabelMode,
+  mode: TimetableFetchMode,
+  schoolLabel?: string,
+  proxyBaseUrl?: string,
+): Promise<SyncTeacherResult> {
+  const code = classCode.trim();
+  if (!code) {
+    return { ok: false, error: "학급을 선택해 주세요." };
+  }
+  if (!Number.isFinite(schoolCode) || schoolCode <= 0) {
+    return { ok: false, error: "컴시간 학교 코드가 없습니다." };
+  }
+
+  let s2h9Bytes: number | undefined;
+  if (mode === "s2h9") {
+    const session = await openS2h9Session(proxyBaseUrl);
+    const ping = await pingS2h9School(session, String(schoolCode));
+    if (!ping.ok) {
+      return { ok: false, error: `s2h9 프록시: ${ping.error}` };
+    }
+    s2h9Bytes = ping.bytes;
+  }
+
+  try {
+    const timetable = await fetchClassTimetableDirect(
+      schoolCode,
+      code,
+      classLabelMode,
+      schoolLabel,
+    );
+    return {
+      ok: true,
+      timetable: timetable as TimetableData,
+      via: mode,
+      s2h9Bytes,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "학급 시간표를 받지 못했습니다.";
     if (mode === "s2h9") {
       return {
         ok: false,

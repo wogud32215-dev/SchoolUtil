@@ -6,7 +6,7 @@ import type {
   TimetableData,
   TimetableManualScope,
 } from "@/types/state";
-import { hasComciganView } from "@/utils/comciganTimetable";
+import { hasComciganClassView, hasComciganView } from "@/utils/comciganTimetable";
 import { formatTimetableCellText } from "@/utils/jeilClassLabels";
 import { emptyGrid, normalizeTimetable } from "@/utils/timetable";
 import {
@@ -24,6 +24,9 @@ type Props = {
   onChange: (data: TimetableData) => void;
   autoSync?: boolean;
   comciganClassLabelMode?: ComciganClassLabelMode;
+  comciganClassSyncEnabled?: boolean;
+  widgetView?: "teacher" | "class";
+  onWidgetViewChange?: (view: "teacher" | "class") => void;
 };
 
 type ManualEditorState = {
@@ -42,6 +45,9 @@ export function TimetableWidget({
   onChange,
   autoSync,
   comciganClassLabelMode = "jeil",
+  comciganClassSyncEnabled = false,
+  widgetView = "teacher",
+  onWidgetViewChange,
 }: Props) {
   const tt = normalizeTimetable(data);
   const displayTt = useMemo(() => buildTimetableForDisplay(tt), [tt]);
@@ -51,29 +57,98 @@ export function TimetableWidget({
   );
   const todayIdx = weekdayIndex();
   const highlightToday = todayIdx <= 4;
+  const classViewReady = hasComciganClassView(tt);
+  const showViewSwitch =
+    Boolean(autoSync && hasComciganView(displayTt) && comciganClassSyncEnabled);
+  const activeView =
+    showViewSwitch && widgetView === "class" && classViewReady
+      ? "class"
+      : "teacher";
+  const classDisplay = useMemo(() => {
+    const snap = tt.comciganClass;
+    if (!snap?.comciganView) return null;
+    return normalizeTimetable({
+      title: snap.title,
+      periodCount: snap.periodCount,
+      grid: snap.grid,
+      substituteFlags: snap.substituteFlags,
+      comciganView: snap.comciganView,
+    });
+  }, [tt.comciganClass]);
   const comciganMode = Boolean(
-    autoSync && hasComciganView(displayTt) && displayTt.comciganView,
+    autoSync &&
+      (activeView === "class"
+        ? classDisplay?.comciganView
+        : hasComciganView(displayTt) && displayTt.comciganView),
   );
+  const comciganViewData =
+    activeView === "class" ? classDisplay : displayTt;
 
-  if (comciganMode && displayTt.comciganView) {
+  if (comciganMode && comciganViewData?.comciganView) {
+    const allowManual = activeView === "teacher";
     return (
       <div className="tt-comcigan-only">
+        {showViewSwitch ? (
+          <div
+            className="tt-comcigan-view-switch"
+            role="tablist"
+            aria-label="시간표 종류"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === "teacher"}
+              className={
+                activeView === "teacher"
+                  ? "tt-comcigan-view-switch__btn tt-comcigan-view-switch__btn--active"
+                  : "tt-comcigan-view-switch__btn"
+              }
+              onClick={() => onWidgetViewChange?.("teacher")}
+            >
+              교사 시간표
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === "class"}
+              className={
+                activeView === "class"
+                  ? "tt-comcigan-view-switch__btn tt-comcigan-view-switch__btn--active"
+                  : "tt-comcigan-view-switch__btn"
+              }
+              disabled={!classViewReady}
+              title={
+                classViewReady
+                  ? undefined
+                  : "설정에서 학급을 고른 뒤 «지금 가져오기» 또는 자동 갱신을 실행하세요."
+              }
+              onClick={() => onWidgetViewChange?.("class")}
+            >
+              학생 시간표
+            </button>
+          </div>
+        ) : null}
         <ComciganTimetableGrid
-          periodCount={displayTt.periodCount}
-          view={displayTt.comciganView}
+          periodCount={comciganViewData.periodCount}
+          view={comciganViewData.comciganView}
           classLabelMode={comciganClassLabelMode}
           todayDayIndex={highlightToday ? todayIdx : -1}
-          onManualCellClick={(dayIndex, periodIndex) => {
-            const existing = resolveManualSlotAt(tt, dayIndex, periodIndex);
-            setManualEditor({
-              dayIndex,
-              periodIndex,
-              label: existing?.label ?? "창체",
-              scope: existing?.scope ?? "weekly",
-            });
-          }}
+          onManualCellClick={
+            allowManual
+              ? (dayIndex, periodIndex) => {
+                  const existing = resolveManualSlotAt(tt, dayIndex, periodIndex);
+                  setManualEditor({
+                    dayIndex,
+                    periodIndex,
+                    label: existing?.label ?? "창체",
+                    scope: existing?.scope ?? "weekly",
+                  });
+                }
+              : undefined
+          }
         />
-        <TimetableManualCellEditor
+        {allowManual ? (
+          <TimetableManualCellEditor
           open={manualEditor !== null}
           dayIndex={manualEditor?.dayIndex ?? 0}
           period={(manualEditor?.periodIndex ?? 0) + 1}
@@ -111,6 +186,7 @@ export function TimetableWidget({
             setManualEditor(null);
           }}
         />
+        ) : null}
       </div>
     );
   }

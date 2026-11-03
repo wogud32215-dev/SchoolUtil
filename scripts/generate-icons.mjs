@@ -256,7 +256,9 @@ function iconsFromSourcePng(sourcePath) {
 async function main() {
   fs.mkdirSync(buildDir, { recursive: true });
   const publicDir = path.join(root, "public");
+  const assetsDir = path.join(root, "src", "assets");
   fs.mkdirSync(publicDir, { recursive: true });
+  fs.mkdirSync(assetsDir, { recursive: true });
 
   const sourcePath = path.join(buildDir, "icon-source.png");
   const fromSource = fs.existsSync(sourcePath);
@@ -266,10 +268,12 @@ async function main() {
 
   const pngPath = path.join(buildDir, "icon.png");
   const publicIconPath = path.join(publicDir, "icon.png");
+  const brandAssetPath = path.join(assetsDir, "schoolutil-brand-icon.png");
   const publicTrayPath = path.join(publicDir, "tray-icon.png");
 
   await writePng(iconPng, pngPath);
   fs.copyFileSync(pngPath, publicIconPath);
+  fs.copyFileSync(pngPath, brandAssetPath);
   if (trayPng === iconPng) {
     fs.copyFileSync(pngPath, publicTrayPath);
   } else {
@@ -281,7 +285,7 @@ async function main() {
 
   const mode = fromSource ? "build/icon-source.png" : "built-in mascot";
   console.log(
-    `Wrote build/icon.png, build/icon.ico, public/icon.png, public/tray-icon.png (${mode})`,
+    `Wrote build/icon.png, build/icon.ico, public/icon.png, src/assets/schoolutil-brand-icon.png, public/tray-icon.png (${mode})`,
   );
 }
 

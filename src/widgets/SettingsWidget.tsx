@@ -40,6 +40,7 @@ type Props = {
   onApplyLayoutPreset: (preset: LayoutPreset) => Promise<boolean>;
   onResetLayout: () => void;
   onPreviewTodayGlance?: () => void;
+  onOpenFeedback?: () => void;
 };
 
 const TODAY_GLANCE_SECTION_LABELS: {
@@ -151,7 +152,10 @@ function settingsEqual(a: AppSettings, b: AppSettings): boolean {
     a.comciganSchoolName === b.comciganSchoolName &&
     a.comciganTeacherName === b.comciganTeacherName &&
     a.comciganTeacherIndex === b.comciganTeacherIndex &&
-    a.comciganClassLabelMode === b.comciganClassLabelMode
+    a.comciganClassLabelMode === b.comciganClassLabelMode &&
+    a.comciganClassSyncEnabled === b.comciganClassSyncEnabled &&
+    a.comciganClassCode === b.comciganClassCode &&
+    a.timetableWidgetView === b.timetableWidgetView
   );
 }
 
@@ -199,6 +203,7 @@ export function SettingsWidget({
   onApplyLayoutPreset,
   onResetLayout,
   onPreviewTodayGlance,
+  onOpenFeedback,
 }: Props) {
   const [tab, setTab] = useState<SettingsTabId>("design");
   const [draft, setDraft] = useState<AppSettings>(settings);
@@ -685,6 +690,19 @@ export function SettingsWidget({
             className="settings-tab-pane"
             aria-label={labelForSettingsTab("help")}
           >
+            <SettingsRow
+              title="문의·요청 보내기"
+              hint="버그·사용법은 «문의», 새 기능·개선은 «기능 요청»으로 보내 주세요. 답변이 필요하면 회신용 이메일을 적어 주세요."
+            >
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => onOpenFeedback?.()}
+                disabled={!onOpenFeedback}
+              >
+                문의·요청 작성
+              </button>
+            </SettingsRow>
             <SettingsRow
               title="사용 설명서"
               hint="카드·설정·학교 연동·내선번호 등 기능별 안내입니다."

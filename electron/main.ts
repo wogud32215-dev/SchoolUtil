@@ -19,6 +19,7 @@ import {
   downloadUpdate,
   getUpdateStatus,
   initAutoUpdate,
+  notifyIfAppWasUpgraded,
   quitAndInstall,
 } from "./auto-update";
 import { exportStateToFile, importStateFromFile } from "./backup";
@@ -39,6 +40,11 @@ import {
 import { fetchCurrentWeather, fetchWeatherForecast } from "./open-meteo";
 import { searchPlaces } from "./open-meteo-geocode";
 import { resolveUserGuideHtmlPath } from "./user-guide";
+import {
+  parseFeedbackSubmitInput,
+  submitFeedback,
+  openFeedbackMailto,
+} from "./feedback-submit";
 import { normalizeSettings } from "./settings-normalize";
 import {
   isBrityMessengerAutomationBusy,
@@ -78,6 +84,7 @@ import {
   getWidgetWindowBounds,
 } from "./widget-window";
 import {
+  listClasses,
   listTeachers,
   searchSchools as searchComciganSchools,
 } from "./comcigan/sync";
@@ -98,6 +105,34 @@ process.env.VITE_PUBLIC = app.isPackaged
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+
+type AppWithQuitFlag = Electron.App & { isQuitting?: boolean };
+
+function isAppQuitting(): boolean {
+  return (app as AppWithQuitFlag).isQuitting === true;
+}
+
+function markAppQuitting(): void {
+  (app as AppWithQuitFlag).isQuitting = true;
+}
+
+/** NSIS·quitAndInstall 전에 호출 — 트레이·창 close 가로채기를 풀고 프로세스를 종료한다. */
+function prepareApplicationQuitForUpdate(): void {
+  markAppQuitting();
+  stopWidgetDesktopMonitor();
+  unregisterGlobalShortcuts();
+  if (tray && !tray.isDestroyed()) {
+    tray.destroy();
+    tray = null;
+  }
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.removeAllListeners("close");
+    if (!win.isDestroyed()) {
+      win.destroy();
+    }
+  }
+  mainWindow = null;
+}
 let pinnedToFront = false;
 let desktopMonitorTimer: ReturnType<typeof setInterval> | null = null;
 let lastDesktopForeground = false;
@@ -637,7 +672,7 @@ function createWindow(): BrowserWindow {
   });
 
   mainWindow.on("close", (event) => {
-    if (!(app as Electron.App & { isQuitting?: boolean }).isQuitting) {
+    if (!isAppQuitting()) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -737,7 +772,7 @@ function buildTrayMenu() {
     {
       label: "종료",
       click: () => {
-        (app as Electron.App & { isQuitting?: boolean }).isQuitting = true;
+        markAppQuitting();
         app.quit();
       },
     },
@@ -973,12 +1008,37 @@ function registerIpc() {
   ipcMain.handle("update:download", () => downloadUpdate());
   ipcMain.handle("update:get-status", () => getUpdateStatus());
   ipcMain.handle("update:install", () => {
-    quitAndInstall();
+    prepareApplicationQuitForUpdate();
+    setImmediate(() => {
+      quitAndInstall();
+    });
   });
 
   ipcMain.handle("app:minimize", () => mainWindow?.minimize());
   ipcMain.handle("app:hide", () => mainWindow?.hide());
   ipcMain.handle("app:version", () => app.getVersion());
+
+  ipcMain.handle("feedback:submit", async (_event, payload: unknown) => {
+    const input = parseFeedbackSubmitInput(payload);
+    if (!input) {
+      return {
+        ok: false as const,
+        error: "입력 내용을 확인해 주세요. (제목·본문 길이, 이메일 형식)",
+      };
+    }
+    return submitFeedback(input);
+  });
+
+  ipcMain.handle("feedback:open-mailto", async (_event, payload: unknown) => {
+    const input = parseFeedbackSubmitInput(payload);
+    if (!input) {
+      return {
+        ok: false as const,
+        error: "입력 내용을 확인해 주세요. (제목·본문 길이, 이메일 형식)",
+      };
+    }
+    return openFeedbackMailto(input);
+  });
 
   ipcMain.handle("app:open-user-guide", async () => {
     const filePath = resolveUserGuideHtmlPath();
@@ -1198,6 +1258,42 @@ function registerIpc() {
     },
   );
 
+  ipcMain.handle(
+    "comcigan:list-classes",
+    async (
+      _event,
+      payload: {
+        schoolCode?: number;
+        mode?: "direct" | "s2h9";
+        proxyBaseUrl?: string;
+        classLabelMode?: "general" | "jeil";
+      },
+    ) => {
+      const schoolCode = Number(payload?.schoolCode);
+      if (!Number.isFinite(schoolCode) || schoolCode <= 0) {
+        return { ok: false as const, error: "학교 코드가 없습니다." };
+      }
+      const mode = payload?.mode === "s2h9" ? "s2h9" : "direct";
+      const classLabelMode =
+        payload?.classLabelMode === "general" ? "general" : "jeil";
+      try {
+        const classes = await listClasses(
+          schoolCode,
+          mode,
+          classLabelMode,
+          payload?.proxyBaseUrl,
+        );
+        return { ok: true as const, classes };
+      } catch (e) {
+        return {
+          ok: false as const,
+          error:
+            e instanceof Error ? e.message : "학급 목록을 받지 못했습니다.",
+        };
+      }
+    },
+  );
+
   ipcMain.handle("comcigan:sync-teacher", async () => {
     const result = await runTimetableAutoSync("manual");
     if (!result.ok) {
@@ -1303,6 +1399,7 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   initAutoUpdate(() => mainWindow);
+  notifyIfAppWasUpgraded();
   applyLoginItem(getState().settings.openAtLogin);
   registerGlobalShortcuts();
   ensureGlobalShortcutsRegistered();
@@ -1348,6 +1445,19 @@ app.whenReady().then(() => {
 app.on("will-quit", () => {
   unregisterGlobalShortcuts();
   stopWidgetDesktopMonitor();
+});
+
+app.on("before-quit", () => {
+  markAppQuitting();
+  if (app.isPackaged) {
+    const settings = getState().settings;
+    patchState({
+      settings: {
+        ...settings,
+        lastLaunchedAppVersion: app.getVersion(),
+      },
+    });
+  }
 });
 
 app.on("window-all-closed", () => {

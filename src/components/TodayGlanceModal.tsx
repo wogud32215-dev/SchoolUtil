@@ -10,6 +10,7 @@ import {
   todayGlanceGreeting,
 } from "@/utils/todayGlance";
 import { wmoLabel } from "@/utils/weatherWmo";
+import brandIconUrl from "@/assets/schoolutil-brand-icon.png";
 
 type Props = {
   open: boolean;
@@ -160,7 +161,7 @@ export function TodayGlanceModal({
           <div className="today-glance-brand-row">
             <img
               className="today-glance-brand-mark"
-              src="/icon.png"
+              src={brandIconUrl}
               alt=""
               width={40}
               height={40}

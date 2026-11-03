@@ -21,6 +21,18 @@ declare global {
       openUserGuide: () => Promise<
         { ok: true; path: string } | { ok: false; error: string }
       >;
+      submitFeedback: (payload: {
+        category: "inquiry" | "feature";
+        subject: string;
+        body: string;
+        replyEmail: string;
+      }) => Promise<{ ok: true } | { ok: false; error: string }>;
+      openFeedbackMailto: (payload: {
+        category: "inquiry" | "feature";
+        subject: string;
+        body: string;
+        replyEmail: string;
+      }) => Promise<{ ok: true } | { ok: false; error: string }>;
       listDisplays: () => Promise<
         {
           id: number;
@@ -104,6 +116,15 @@ declare global {
         | { ok: true; teachers: import("@/types/state").ComciganTeacherOption[] }
         | { ok: false; error: string }
       >;
+      listComciganClasses: (opts: {
+        schoolCode: number;
+        mode: "direct" | "s2h9";
+        proxyBaseUrl?: string;
+        classLabelMode: "general" | "jeil";
+      }) => Promise<
+        | { ok: true; classes: import("@/types/state").ComciganClassOption[] }
+        | { ok: false; error: string }
+      >;
       syncComciganTeacherTimetable: () => Promise<
         | { ok: true }
         | { ok: false; error: string }
@@ -160,6 +181,7 @@ declare global {
       getUpdateStatus: () => Promise<{
         available: boolean;
         version: string | null;
+        releaseNotes: string[];
         downloadPhase: "idle" | "downloading" | "downloaded";
         downloadPercent: number;
         downloadTransferred: number;
@@ -182,9 +204,17 @@ declare global {
       ) => () => void;
       onRefreshShape: (listener: () => void) => () => void;
       onUpdateAvailable: (
-        listener: (payload: { version: string }) => void,
+        listener: (payload: {
+          version: string;
+          releaseNotes: string[];
+        }) => void,
       ) => () => void;
-      onUpdateDownloaded: (listener: () => void) => () => void;
+      onUpdateDownloaded: (
+        listener: (payload: {
+          version: string | null;
+          releaseNotes: string[];
+        }) => void,
+      ) => () => void;
       onUpdateNotAvailable: (listener: () => void) => () => void;
       onUpdateError: (listener: (payload: { message: string }) => void) => () => void;
       onUpdateProgress: (listener: (payload: {

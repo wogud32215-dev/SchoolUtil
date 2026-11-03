@@ -1,8 +1,10 @@
 import type { AppUpdateUiPhase } from "@/hooks/useAppUpdatePrompt";
+import { UpdateReleaseNotesList } from "@/components/UpdateReleaseNotesList";
 
 type Props = {
   version: string | null;
   phase: AppUpdateUiPhase;
+  releaseNotes: string[];
   percent: number;
   transferred: number;
   total: number;
@@ -38,6 +40,7 @@ function progressDetail(
 export function UpdatePromptBanner({
   version,
   phase,
+  releaseNotes,
   percent,
   transferred,
   total,
@@ -72,6 +75,9 @@ export function UpdatePromptBanner({
     >
       <div className="update-prompt-banner-body">
         <span className="update-prompt-banner-text">{label}</span>
+        {phase === "available" || phase === "downloaded" ? (
+          <UpdateReleaseNotesList notes={releaseNotes} />
+        ) : null}
         {showBar ? (
           <div className="update-prompt-progress-block">
             <div

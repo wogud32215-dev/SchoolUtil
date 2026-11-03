@@ -57,6 +57,10 @@ export function hasComciganView(tt: TimetableData): boolean {
   return Boolean(tt.comciganView?.chips?.length);
 }
 
+export function hasComciganClassView(tt: TimetableData): boolean {
+  return Boolean(tt.comciganClass?.comciganView?.chips?.length);
+}
+
 export function cellChips(
   view: ComciganTimetableView,
   day: number,

@@ -81,4 +81,9 @@ export default defineConfig({
     },
   },
   base: "./",
+  server: {
+    watch: {
+      ignored: ["**/release/**", "**/release-staging/**"],
+    },
+  },
 });

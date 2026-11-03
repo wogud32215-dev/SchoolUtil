@@ -29,6 +29,8 @@ import { MemoWidget } from "@/widgets/MemoWidget";
 import { WorkPortalWidget } from "@/widgets/WorkPortalWidget";
 import { QuickLaunchWidget } from "@/widgets/QuickLaunchWidget";
 import { SettingsModal } from "@/components/SettingsModal";
+import { FeedbackModal } from "@/components/FeedbackModal";
+import { TitleBarFeedbackButton } from "@/components/TitleBarFeedbackButton";
 import { SettingsIcon } from "@/components/SettingsIcon";
 import { PhoneIcon } from "@/components/PhoneIcon";
 import { ExtensionDirectoryModal } from "@/components/ExtensionDirectoryModal";
@@ -36,7 +38,8 @@ import { WidgetHeaderIcon } from "@/components/WidgetHeaderIcon";
 import { TodayGlanceModal } from "@/components/TodayGlanceModal";
 import { ComciganSubstituteModal } from "@/components/ComciganSubstituteModal";
 import { UpdatePromptBanner } from "@/components/UpdatePromptBanner";
-import { useAppUpdatePrompt } from "@/hooks/useAppUpdatePrompt";
+import { UpdateCompleteBanner } from "@/components/UpdateCompleteBanner";
+import { useAppUpdatePrompt, useUpdateCompleteNotice } from "@/hooks/useAppUpdatePrompt";
 import { timetableSubstituteFingerprint } from "@/utils/timetableSubstitute";
 import {
   buildTodayGlanceSyncContent,
@@ -47,7 +50,7 @@ import {
 } from "@/utils/todayGlance";
 
 const WIDGET_INTERACTIVE_SELECTOR =
-  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .update-prompt-banner, .settings-modal, .settings-modal-backdrop, .extension-modal, .extension-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
+  ".widget-card, .title-bar, .onboarding-banner, .persist-banner, .update-prompt-banner, .settings-modal, .settings-modal-backdrop, .feedback-modal-backdrop, .feedback-modal, .extension-modal, .extension-modal-backdrop, .cal-day-modal, .cal-day-modal-backdrop, .today-glance-backdrop, .today-glance-modal, .comcigan-substitute-backdrop, .comcigan-substitute-modal, .tt-manual-editor-backdrop, .tt-manual-editor, .todo-cat-select-menu";
 
 function toGridLayout(
   ids: WidgetId[],
@@ -115,6 +118,11 @@ function renderWidgetBody(
           onChange={(timetable) => void patch({ timetable })}
           autoSync={state.settings.timetableAutoSync}
           comciganClassLabelMode={state.settings.comciganClassLabelMode}
+          comciganClassSyncEnabled={state.settings.comciganClassSyncEnabled}
+          widgetView={state.settings.timetableWidgetView}
+          onWidgetViewChange={(timetableWidgetView) =>
+            void patch({ settings: { ...state.settings, timetableWidgetView } })
+          }
         />
       );
     case "schoolsched":
@@ -141,6 +149,7 @@ export default function App() {
   const [desktopLayerWarn, setDesktopLayerWarn] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [extensionsOpen, setExtensionsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [todayGlanceOpen, setTodayGlanceOpen] = useState(false);
   const [todayGlancePreviewEmpty, setTodayGlancePreviewEmpty] = useState(false);
   const [substituteAlertOpen, setSubstituteAlertOpen] = useState(false);
@@ -196,6 +205,18 @@ export default function App() {
       if (!live) return;
       void patch({
         settings: { ...live.settings, dismissedUpdateVersion: version },
+      });
+    },
+  });
+
+  const updateComplete = useUpdateCompleteNotice({
+    ready: ready && electronOk,
+    lastLaunchedAppVersion: state?.settings.lastLaunchedAppVersion,
+    onAcknowledgeVersion: (version) => {
+      const live = stateRef.current;
+      if (!live) return;
+      void patch({
+        settings: { ...live.settings, lastLaunchedAppVersion: version },
       });
     },
   });
@@ -328,6 +349,16 @@ export default function App() {
     void window.schoolUtil?.wakeForInput?.();
   }, [todayGlanceOpen, widgetMode]);
 
+  useEffect(() => {
+    if (!extensionsOpen || !widgetMode) return;
+    void window.schoolUtil?.wakeForInput?.();
+  }, [extensionsOpen, widgetMode]);
+
+  useEffect(() => {
+    if (!feedbackOpen || !widgetMode) return;
+    void window.schoolUtil?.wakeForInput?.();
+  }, [feedbackOpen, widgetMode]);
+
   const widgetLockToScreen = state?.settings.widgetLockToScreen !== false;
   const widgetMonitor = state?.settings.widgetMonitor;
 
@@ -346,8 +377,8 @@ export default function App() {
 
   const layoutKey = useMemo(
     () =>
-      `${JSON.stringify(layout)}-${activeIds.join(",")}-settings:${settingsOpen}-ext:${extensionsOpen}-glance:${todayGlanceOpen}`,
-    [layout, activeIds, settingsOpen, extensionsOpen, todayGlanceOpen],
+      `${JSON.stringify(layout)}-${activeIds.join(",")}-settings:${settingsOpen}-ext:${extensionsOpen}-feedback:${feedbackOpen}-glance:${todayGlanceOpen}`,
+    [layout, activeIds, settingsOpen, extensionsOpen, feedbackOpen, todayGlanceOpen],
   );
   const theme = state?.settings.theme ?? "sky";
   const fontFamily = state?.settings.fontFamily ?? "pretendard";
@@ -519,10 +550,18 @@ export default function App() {
           숨기기·맨 앞 보기는 Ctrl+Alt+D · 비상 탈출은 Ctrl+Alt+Shift+D
         </div>
       )}
-      {electronOk && appUpdate.visible ? (
+      {electronOk && updateComplete.visible && updateComplete.version ? (
+        <UpdateCompleteBanner
+          version={updateComplete.version}
+          releaseNotes={updateComplete.releaseNotes}
+          onDismiss={updateComplete.dismiss}
+        />
+      ) : null}
+      {electronOk && appUpdate.visible && !updateComplete.visible ? (
         <UpdatePromptBanner
           version={appUpdate.version}
           phase={appUpdate.phase}
+          releaseNotes={appUpdate.releaseNotes}
           percent={appUpdate.percent}
           transferred={appUpdate.transferred}
           total={appUpdate.total}
@@ -558,6 +597,7 @@ export default function App() {
               {pinned ? "바탕화면으로" : "숨기기"}
             </button>
           )}
+          <TitleBarFeedbackButton onClick={() => setFeedbackOpen(true)} />
           <button
             type="button"
             className="title-bar-settings-btn"
@@ -639,7 +679,9 @@ export default function App() {
         onApplyLayoutPreset={applyLayoutPreset}
         onResetLayout={() => void patch({ layout: {} })}
         onPreviewTodayGlance={previewTodayGlance}
+        onOpenFeedback={() => setFeedbackOpen(true)}
       />
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <ExtensionDirectoryModal
         open={extensionsOpen}
         directory={state.extensions}

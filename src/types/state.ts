@@ -64,6 +64,8 @@ export type ComciganLessonChip = {
   subject: string;
   changed: boolean;
   originalSubject?: string;
+  /** 학급 시간표: 담당 교사 */
+  teacherName?: string;
   /** 원래 시간표 칸이었으나 교체 등으로 현재 표에서 빠진 수업 */
   vacated?: boolean;
   /** 사용자가 넣은 수동 칸 (창체 등) */
@@ -102,12 +104,22 @@ export type ComciganTimetableView = {
   changes: TimetableSubstituteChange[];
 };
 
+/** 컴시간에서 받은 학급 시간표 */
+export type ComciganSyncedTimetable = {
+  title: string;
+  periodCount: number;
+  grid: string[][];
+  substituteFlags?: boolean[][];
+  comciganView?: ComciganTimetableView;
+};
+
 export type TimetableData = {
   title: string;
   periodCount: number;
   grid: string[][];
   substituteFlags?: boolean[][];
   comciganView?: ComciganTimetableView;
+  comciganClass?: ComciganSyncedTimetable;
   /** 컴시간 빈 칸에 매주 표시할 수업 (창체 등) */
   weeklyManual?: TimetableWeeklyManualSlot[];
   /** 이번 주만 표시할 수업 */
@@ -271,17 +283,29 @@ export type AppSettings = {
   comciganTeacherIndex: number;
   /** 컴시간 학급 표기: 일반고(학년·반) / 제일고(학과·반) */
   comciganClassLabelMode: ComciganClassLabelMode;
+  /** 학급 시간표도 컴시간에서 함께 받기 */
+  comciganClassSyncEnabled: boolean;
+  /** 컴시간 학급 코드 (예: 204) */
+  comciganClassCode: string;
+  /** 시간표 위젯 표시: 교사 / 학급 */
+  timetableWidgetView: "teacher" | "class";
   timetableLastSyncAt: string;
   timetableLastSyncError: string;
   timetableLastSyncVia: "" | "direct" | "s2h9";
   timetableLastSyncReason: "" | "startup" | "schedule" | "manual";
   timetableSubstituteNotifiedKey: string;
   dismissedUpdateVersion?: string;
+  lastLaunchedAppVersion?: string;
 };
 
 export type ComciganTeacherOption = {
   index: number;
   name: string;
+  label: string;
+};
+
+export type ComciganClassOption = {
+  classCode: string;
   label: string;
 };
 
