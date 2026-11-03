@@ -50,6 +50,23 @@ jobs:
           $key = $env:NEIS_SHARED_KEY.Trim()
           Set-Content -Path config/neis-shared.key -Value $key -Encoding utf8NoBOM
 
+      - name: Prepare Web3Forms access key for release build
+        shell: pwsh
+        env:
+          WEB3FORMS_ACCESS_KEY: ${{ secrets.WEB3FORMS_ACCESS_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WEB3FORMS_ACCESS_KEY)) {
+            Write-Error "Repository secret WEB3FORMS_ACCESS_KEY is missing. GitHub repo → Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          }
+          New-Item -ItemType Directory -Force -Path config | Out-Null
+          $key = $env:WEB3FORMS_ACCESS_KEY.Trim()
+          if ($key.Length -lt 16) {
+            Write-Error "WEB3FORMS_ACCESS_KEY is too short."
+            exit 1
+          }
+          Set-Content -Path config/web3forms-access.key -Value $key -Encoding utf8NoBOM
+
       - run: npm run typecheck
 
       - name: Build installer and publish to GitHub Releases

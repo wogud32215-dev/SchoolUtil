@@ -6,6 +6,12 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.0.8",
+    highlights: [
+      "문의·요청: GitHub Releases 설치본에서도 Web3Forms로 이메일 전송",
+    ],
+  },
+  {
     version: "1.0.7",
     highlights: [
       "문의·요청: Web3Forms로 이메일 전송 (광고 차단·FormSubmit 활성화 없이 사용)",

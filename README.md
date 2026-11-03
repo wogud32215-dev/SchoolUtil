@@ -1,11 +1,11 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.7**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.0.8**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-1.0.7.exe`
+파일 이름 예: `SchoolUtil-Setup-1.0.8.exe`
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»를 볼 수 있습니다. 새 버전은 **설정을 열지 않아도** 상단 배너로 안내되며, 필요할 때 «업데이트 확인»으로 수동 확인도 할 수 있습니다.
 
@@ -162,6 +162,18 @@ Releases 설치본에 **앱 공용 NEIS 키**를 넣으려면 저장소에 secre
 
 로컬 빌드는 기존처럼 `config/neis-shared.key` 파일(`.gitignore`)을 쓰면 됩니다. `config/neis-shared.key.example` 참고.
 
+### Web3Forms (문의·요청 · GitHub Releases)
+
+Releases 설치본에서 **문의·요청**을 Web3Forms로 보내려면 Actions secret을 등록합니다 (FormSubmit 활성화 불필요).
+
+1. [web3forms.com](https://web3forms.com)에서 발급한 **Access Key 한 줄**을 준비합니다.
+2. GitHub 저장소 **Settings → Secrets and variables → Actions → New repository secret**
+3. Name: **`WEB3FORMS_ACCESS_KEY`**, Value: Access Key만 붙여 넣기 → **Add secret**
+4. Release 워크플로가 빌드 전 `config/web3forms-access.key`를 만든 뒤 설치 파일(`extraResources`)에 포함합니다.
+5. secret 등록 **이후** 새 태그로 Release를 다시 돌립니다 (이미 올린 Setup에는 키가 없을 수 있음 → **버전 올려 재태그** 또는 태그 삭제 후 재푸시).
+
+로컬은 `config/web3forms-access.key` 또는 `SCHOOLUTIL_WEB3FORMS_ACCESS_KEY` 환경 변수. `config/web3forms-access.key.example` 참고.
+
 **릴리스 = 사용자 알림:** 설치판 앱은 실행 후 약 8초 뒤·12시간마다·절전 복귀 시 GitHub에서 새 버전을 확인합니다. 새 버전이 있으면 **화면 상단 배너**와 (창이 가려져 있으면) **Windows 알림**으로 안내하며, «지금 받기»로 Setup을 내려받아 재시작 설치할 수 있습니다. 별도 푸시 서버는 없습니다.
 
 ### 사용자에게 GitHub 설치 1회 안내 (배포자)
@@ -228,19 +240,26 @@ npm run dist
 
 ### 문의·요청 (관리자 · 릴리스 빌드)
 
-앱 **제목줄 «문의하기»** 또는 **설정 → 안내 → 문의·요청 보내기**에서 «문의»/«기능 요청»을 작성하면 [FormSubmit](https://formsubmit.co/)으로 관리자 이메일에 전달됩니다. NEIS 키·포털 비밀번호 등은 보내지 않습니다.
+앱 **제목줄 «문의하기»** 또는 **설정 → 안내 → 문의·요청 보내기**에서 «문의»/«기능 요청»을 작성하면 관리자 이메일로 전달됩니다. NEIS 키·포털 비밀번호 등은 보내지 않습니다.
 
-1. **최초 1회**: 앱에서 문의를 보내면 FormSubmit이 수신 주소로 **«Activate Form»** 메일을 보냅니다. **스팸함·프로모션함**도 확인한 뒤 링크를 눌러야 이후 전송이 도착합니다. (활성화 전에는 앱에 «FormSubmit 활성화가 필요합니다» 안내가 표시됩니다.)
-2. **릴리스 빌드**: 기본 수신 주소가 앱에 포함됩니다. 다른 주소로 받으려면 빌드 전 (PowerShell 예):
+- **우선**: Web3Forms (`config/web3forms-access.key` 또는 GitHub secret `WEB3FORMS_ACCESS_KEY`로 릴리스 빌드)
+- **키 없을 때**: [FormSubmit](https://formsubmit.co/) (최초 «Activate Form» 메일 활성화 필요)
+
+1. **FormSubmit만 쓸 때**: 앱에서 첫 전송 후 수신 메일함(스팸함 포함)에서 **«Activate Form»** 링크를 눌러야 합니다.
+2. **릴리스 빌드**: GitHub Actions는 위 **Web3Forms secret**을 권장합니다. 다른 수신 주소는 빌드 전 (PowerShell 예):
    ```powershell
    $env:SCHOOLUTIL_FEEDBACK_EMAIL = "other@email.com"
    npm run dist
    ```
 3. **받은편지함 정리**: 제목이 `[SchoolUtil]`로 시작하므로 메일 규칙·필터에 활용하세요.
 
+## 변경 (1.0.8)
+
+- **배포**: GitHub Release 빌드에 Web3Forms 키 포함 (`WEB3FORMS_ACCESS_KEY` secret)
+
 ## 변경 (1.0.7)
 
-- **문의·요청**: Web3Forms로 이메일 전송 (로컬·릴리스 빌드에 `config/web3forms-access.key` 포함 시). 키가 없으면 FormSubmit fallback
+- **문의·요청**: Web3Forms로 이메일 전송 (로컬 `config/web3forms-access.key`, 릴리스는 GitHub secret `WEB3FORMS_ACCESS_KEY`)
 
 ## 변경 (1.0.6)
 
