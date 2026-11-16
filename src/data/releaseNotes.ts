@@ -6,6 +6,14 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.0.9",
+    highlights: [
+      "컴시간: 암호화 응답·사이트 구조 변경 대응",
+      "메모: 쪽지 드래그로 위치 이동",
+      "달력·할 일·업데이트 안내 사용성 개선",
+    ],
+  },
+  {
     version: "1.0.8",
     highlights: [
       "문의·요청: GitHub Releases 설치본에서도 Web3Forms로 이메일 전송",
@@ -49,10 +57,55 @@ export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   },
 ];
 
+function parseSemver(version: string): [number, number, number] | null {
+  const m = /^(\d+)\.(\d+)\.(\d+)/.exec(version.trim());
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+/** semver 비교 — 파싱 실패 시 문자열 동등 비교 */
+export function compareSemver(a: string, b: string): number {
+  const pa = parseSemver(a);
+  const pb = parseSemver(b);
+  if (pa && pb) {
+    for (let i = 0; i < 3; i += 1) {
+      if (pa[i] !== pb[i]) return pa[i] < pb[i] ? -1 : 1;
+    }
+    return 0;
+  }
+  const sa = a.trim();
+  const sb = b.trim();
+  if (sa === sb) return 0;
+  return sa < sb ? -1 : 1;
+}
+
 export function bundledHighlightsForVersion(version: string): string[] {
   const v = version.trim();
   const entry = RELEASE_NOTES_CATALOG.find((e) => e.version === v);
   return entry?.highlights ? [...entry.highlights] : [];
+}
+
+/** 이전 버전(미포함) ~ 대상 버전(포함) 사이 릴리스 요약 */
+export function collectHighlightsBetween(
+  fromVersion: string,
+  toVersion: string,
+): string[] {
+  const from = fromVersion.trim();
+  const to = toVersion.trim();
+  if (!from || !to || compareSemver(from, to) >= 0) {
+    return bundledHighlightsForVersion(to);
+  }
+  const out: string[] = [];
+  for (const entry of RELEASE_NOTES_CATALOG) {
+    if (
+      compareSemver(entry.version, from) > 0 &&
+      compareSemver(entry.version, to) <= 0
+    ) {
+      out.push(...entry.highlights);
+    }
+  }
+  if (out.length > 0) return out.slice(0, 8);
+  return mergeReleaseHighlights(to, []);
 }
 
 export function mergeReleaseHighlights(

@@ -8,15 +8,17 @@ import type {
 } from "../store";
 import { labelForComciganClassCode } from "./class-labels";
 import { periodStartTimes, weekDatesFromMonday } from "./week-meta";
-import { fetchBytes } from "./http";
+import { fetchText } from "./http";
+import { decodeComciganResponse } from "./encrypted-response";
 import {
   COMCI_BASE_URL,
   encodeSchoolSearchPath,
   encodeTimetablePath,
-  getComciganRoutes,
+  getComciganSession,
+  type ComciganRoutes,
+  type ComciganSession,
 } from "./routes";
 import {
-  decodeComciResponseText,
   listClassesFromFull,
   listTeachersFromTimetableJson,
   parseFullTimetable,
@@ -37,27 +39,44 @@ function classLabelForMode(
   return labelForComciganClassCode(classCode, mode);
 }
 
+async function fetchComciganPayload(
+  path: string,
+  session: ComciganSession,
+): Promise<Record<string, unknown>> {
+  const text = await fetchText(`${COMCI_BASE_URL}${path}`, {
+    requestToken: session.protocol.requestToken,
+  });
+  return decodeComciganResponse(
+    text,
+    session.protocol.key,
+    session.protocol.version,
+  );
+}
+
+function timetableJsonText(data: Record<string, unknown>): string {
+  return JSON.stringify(data);
+}
+
 export async function searchComciganSchools(
   query: string,
 ): Promise<ComciganSchoolRow[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const routes = await getComciganRoutes();
-  const path = encodeSchoolSearchPath(routes, q);
-  const buf = await fetchBytes(`${COMCI_BASE_URL}${path}`);
-  const text = decodeComciResponseText(buf);
-  return parseSchoolSearch(text);
+  const session = await getComciganSession();
+  const path = encodeSchoolSearchPath(session, q);
+  const data = await fetchComciganPayload(path, session);
+  return parseSchoolSearch(timetableJsonText(data), session.protocol);
 }
 
 export async function fetchTimetableJson(
   schoolCode: number,
   weekIndex = 1,
-): Promise<{ jsonText: string; routes: Awaited<ReturnType<typeof getComciganRoutes>> }> {
-  const routes = await getComciganRoutes();
-  const path = encodeTimetablePath(routes, schoolCode, weekIndex);
-  const buf = await fetchBytes(`${COMCI_BASE_URL}${path}`);
-  const jsonText = decodeComciResponseText(buf);
-  return { jsonText, routes };
+): Promise<{ jsonText: string; routes: ComciganRoutes }> {
+  const session = await getComciganSession();
+  const path = encodeTimetablePath(session, schoolCode, weekIndex);
+  const data = await fetchComciganPayload(path, session);
+  const jsonText = timetableJsonText(data);
+  return { jsonText, routes: session.routes };
 }
 
 export async function listComciganTeachers(
@@ -135,6 +154,8 @@ export function buildTeacherTimetableGrid(
             }
             continue;
           }
+
+          if (!cell.changed) continue;
 
           const origIdx = cell.originalTeacherIndex ?? -1;
           if (origIdx !== teacherIndex || !origSubject) continue;

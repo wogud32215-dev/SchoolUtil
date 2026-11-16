@@ -1,4 +1,5 @@
 import iconv from "iconv-lite";
+import type { ServiceProtocol } from "./service-protocol";
 
 export type ComciganSchoolRow = {
   regionCode: number;
@@ -37,20 +38,59 @@ export function decodeComciResponseText(buf: Buffer): string {
   return iconv.decode(buf, "euc-kr").replace(/\0/g, "");
 }
 
-export function parseSchoolSearch(jsonText: string): ComciganSchoolRow[] {
+export function parseSchoolSearch(
+  jsonText: string,
+  protocol?: Pick<ServiceProtocol, "schoolDivisor" | "schoolOffset">,
+): ComciganSchoolRow[] {
   const data = JSON.parse(jsonText) as {
     학교검색?: [number, string, string, number][];
   };
   const rows = data.학교검색 ?? [];
-  return rows.map(([regionCode, regionName, schoolName, schoolCode]) => ({
-    regionCode,
-    regionName,
-    schoolName,
-    schoolCode,
-  }));
+  const divisor = protocol?.schoolDivisor;
+  const offset = protocol?.schoolOffset ?? 0;
+  const out: ComciganSchoolRow[] = [];
+  for (const row of rows) {
+    if (row.length < 4) continue;
+    if (row[0] === 0 && row[3] === 0) continue;
+    let schoolCode = row[3];
+    if (divisor && divisor > 0) {
+      const column = Math.floor(row[0] / divisor) + offset;
+      if (column >= 3 && column < row.length && typeof row[column] === "number") {
+        schoolCode = row[column];
+      }
+    }
+    out.push({
+      regionCode: row[0],
+      regionName: row[1],
+      schoolName: row[2],
+      schoolCode,
+    });
+  }
+  return out;
 }
 
 type RawTimetableJson = Record<string, unknown>;
+
+/** 컴시간 «변경알림» 학교: `>` 접두가 있을 때만 이번 주 변경으로 본다 */
+export function isComciganMarkedChange(raw: unknown): boolean {
+  return typeof raw === "string" && raw.trim().startsWith(">");
+}
+
+function comciganCellChanged(
+  rawNow: unknown,
+  rawOrigin: unknown,
+  pNow: number,
+  pOrigin: number,
+  changeNotifications: boolean,
+): boolean {
+  if (changeNotifications) {
+    return isComciganMarkedChange(rawNow);
+  }
+  return (
+    rawNow !== rawOrigin &&
+    (pNow !== pOrigin || String(rawNow) !== String(rawOrigin))
+  );
+}
 
 /** 교시 코드: 숫자 또는 교체 표시 접두(`>13013` 등) */
 export function parsePeriodCode(raw: unknown): number {
@@ -103,6 +143,7 @@ export function parseFullTimetable(
     throw new Error("컴시간 시간표 응답을 읽지 못했습니다.");
   }
 
+  const changeNotifications = String(data["변경알림"] ?? "") === "1";
   const teachersLen = Math.floor(Math.log10(teachers.length - 1)) + 1;
 
   const result: ComciganLessonCell[][][][] = [];
@@ -118,10 +159,20 @@ export function parseFullTimetable(
           const rawOrigin = original[gi]?.[ci]?.[di]?.[pi];
           const pNow = parsePeriodCode(rawNow);
           const pOrigin = parsePeriodCode(rawOrigin);
-          const changed =
-            rawNow !== rawOrigin && (pNow !== pOrigin || String(rawNow) !== String(rawOrigin));
-          const nowCell = decodePeriodCell(
+          const changed = comciganCellChanged(
             rawNow,
+            rawOrigin,
+            pNow,
+            pOrigin,
+            changeNotifications,
+          );
+          const useOriginForDisplay =
+            changeNotifications &&
+            !isComciganMarkedChange(rawNow) &&
+            pNow === 0 &&
+            pOrigin > 0;
+          const nowCell = decodePeriodCell(
+            useOriginForDisplay ? rawOrigin : rawNow,
             teachers,
             subjects,
             teachersLen,

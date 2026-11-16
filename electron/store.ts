@@ -290,6 +290,8 @@ export type AppSettings = {
   dismissedUpdateVersion?: string;
   /** 마지막으로 종료(또는 업데이트 확인)했을 때의 앱 버전 — 업그레이드 완료 배너용 */
   lastLaunchedAppVersion?: string;
+  /** 업데이트 완료·변경 요약 배너를 확인한 앱 버전 */
+  acknowledgedAppVersion?: string;
 };
 
 const PORTAL_LAST_RUN_KEY: Record<

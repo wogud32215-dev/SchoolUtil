@@ -1,11 +1,14 @@
 const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
 export type DueTone =
+  | "yesterday"
   | "today"
   | "tomorrow"
   | "soon"
   | "overdue"
   | "default";
+
+export type DueProximity = "yesterday" | "today" | "tomorrow";
 
 export type DueLabelResult = {
   text: string;
@@ -48,8 +51,11 @@ export function formatDueLabel(
     (dayStart(due) - dayStart(now)) / (24 * 60 * 60 * 1000),
   );
 
-  if (diffDays < 0) {
+  if (diffDays < -1) {
     return { text: "연체", tone: "overdue" };
+  }
+  if (diffDays === -1) {
+    return { text: "어제", tone: "yesterday" };
   }
   if (diffDays === 0) {
     return { text: "오늘", tone: "today" };
@@ -67,6 +73,57 @@ export function formatDueLabel(
     return { text, tone: "soon" };
   }
   return { text, tone: "default" };
+}
+
+/** 로컬 기준 어제·오늘·내일 (YYYY-MM-DD) */
+export function dueNeighborYmds(now = new Date()): Record<DueProximity, string> {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return {
+    yesterday: ymdForLocalDate(
+      yesterday.getFullYear(),
+      yesterday.getMonth() + 1,
+      yesterday.getDate(),
+    ),
+    today: ymdForLocalDate(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      today.getDate(),
+    ),
+    tomorrow: ymdForLocalDate(
+      tomorrow.getFullYear(),
+      tomorrow.getMonth() + 1,
+      tomorrow.getDate(),
+    ),
+  };
+}
+
+export function dueProximity(
+  dueDate: string,
+  now = new Date(),
+): DueProximity | null {
+  const due = parseYmd(dueDate);
+  if (!due) return null;
+  const diffDays = Math.round(
+    (dayStart(due) - dayStart(now)) / (24 * 60 * 60 * 1000),
+  );
+  if (diffDays === -1) return "yesterday";
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  return null;
+}
+
+function isDueProximityTone(
+  tone: DueTone,
+): tone is DueProximity {
+  return tone === "yesterday" || tone === "today" || tone === "tomorrow";
+}
+
+export function isNearDueTone(tone: DueTone): tone is DueProximity {
+  return isDueProximityTone(tone);
 }
 
 export function ymdForLocalDate(year: number, month: number, day: number): string {

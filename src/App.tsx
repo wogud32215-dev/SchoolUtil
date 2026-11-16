@@ -211,12 +211,17 @@ export default function App() {
 
   const updateComplete = useUpdateCompleteNotice({
     ready: ready && electronOk,
+    acknowledgedAppVersion: state?.settings.acknowledgedAppVersion,
     lastLaunchedAppVersion: state?.settings.lastLaunchedAppVersion,
     onAcknowledgeVersion: (version) => {
       const live = stateRef.current;
       if (!live) return;
       void patch({
-        settings: { ...live.settings, lastLaunchedAppVersion: version },
+        settings: {
+          ...live.settings,
+          acknowledgedAppVersion: version,
+          lastLaunchedAppVersion: version,
+        },
       });
     },
   });
@@ -553,6 +558,7 @@ export default function App() {
       {electronOk && updateComplete.visible && updateComplete.version ? (
         <UpdateCompleteBanner
           version={updateComplete.version}
+          previousVersion={updateComplete.previousVersion}
           releaseNotes={updateComplete.releaseNotes}
           onDismiss={updateComplete.dismiss}
         />

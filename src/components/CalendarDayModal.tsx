@@ -200,7 +200,6 @@ export function CalendarDayModal({
   }
 
   const empty = dayNeis.length === 0 && dayTodos.length === 0;
-
   return createPortal(
     <div
       className="cal-day-modal-backdrop"

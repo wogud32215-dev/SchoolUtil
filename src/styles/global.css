@@ -201,6 +201,12 @@ select {
   font-weight: 600;
 }
 
+.update-prompt-banner-subtitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
 .update-prompt-notes {
   margin: 0;
   padding-left: 1.15rem;
@@ -964,8 +970,10 @@ select {
 
 .tt-grid {
   width: 100%;
+  min-width: 0;
   border-collapse: collapse;
   font-size: 0.82rem;
+  table-layout: fixed;
 }
 
 .tt-grid th,
@@ -974,6 +982,12 @@ select {
   padding: 4px 6px;
   text-align: center;
   vertical-align: middle;
+  overflow: hidden;
+}
+
+.tt-grid:not(.tt-comcigan-grid) th:first-child,
+.tt-grid:not(.tt-comcigan-grid) td:first-child {
+  width: 2.5rem;
 }
 
 .tt-grid thead th {
@@ -1036,8 +1050,8 @@ select {
   white-space: pre-wrap;
 }
 
-.todo-tag,
-.todo-due {
+.todo-item .todo-tag,
+.todo-item .todo-due {
   display: inline-block;
   margin-left: 8px;
   font-size: 0.75rem;
@@ -1047,7 +1061,7 @@ select {
   color: var(--text-muted);
 }
 
-.todo-due {
+.todo-item .todo-due {
   background: rgba(0, 0, 0, 0.25);
 }
 

@@ -107,6 +107,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: right;
+}
+
+.todo-table .todo-due {
+  margin-left: 0;
+  background: color-mix(in srgb, var(--text) 8%, var(--bg-card, #fff));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 75%, var(--text) 25%);
 }
 
 .todo-table .todo-check {
@@ -124,6 +132,10 @@
 
 .todo-table--view .todo-row--view {
   grid-template-columns: minmax(4.5rem, 22%) 28px 1fr minmax(5.5rem, 34%);
+}
+
+.todo-row-text--today {
+  font-weight: var(--type-strong);
 }
 
 .todo-table--view {
@@ -504,37 +516,61 @@
 .todo-due {
   display: inline-block;
   margin-left: 0;
-  font-size: 0.72rem;
-  padding: 2px 8px;
-  border-radius: 6px;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 999px;
   font-weight: var(--type-heading);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
-.todo-due--today {
-  background: rgba(255, 59, 48, 0.12);
-  color: #ff3b30;
+.todo-table .todo-due--yesterday {
+  color: #6d28d9;
+  background: color-mix(in srgb, #c4b5fd 42%, var(--bg-card, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #7c3aed 55%, transparent);
 }
 
-.todo-due--tomorrow {
-  background: rgba(255, 149, 0, 0.14);
-  color: #c93400;
+.todo-table .todo-due--today {
+  color: #b91c1c;
+  background: color-mix(in srgb, #fecaca 55%, var(--bg-card, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #dc2626 58%, transparent);
 }
 
-.todo-due--soon {
-  background: var(--accent-soft);
-  color: var(--accent);
+.todo-table .todo-due--tomorrow {
+  color: #c2410c;
+  background: color-mix(in srgb, #fed7aa 50%, var(--bg-card, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ea580c 52%, transparent);
 }
 
-.todo-due--overdue {
-  background: rgba(142, 142, 147, 0.2);
-  color: var(--text-muted);
+.todo-table .todo-due--soon {
+  color: color-mix(in srgb, var(--accent) 88%, #0f172a);
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--bg-card, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.todo-table .todo-due--overdue {
+  color: #9f1239;
+  background: color-mix(in srgb, #fda4af 45%, var(--bg-card, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #e11d48 50%, transparent);
   text-decoration: line-through;
 }
 
-.todo-due--default {
-  background: var(--input-bg, rgba(0, 0, 0, 0.06));
+.todo-table .todo-due--default {
+  color: color-mix(in srgb, var(--text) 92%, #0f172a);
+  background: color-mix(in srgb, var(--text) 6%, var(--bg-card, #fff) 94%);
+  font-weight: var(--type-heading);
+}
+
+.todo-table .todo-due--none {
   color: var(--text-muted);
-  font-weight: var(--type-emphasis);
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .btn-icon {
@@ -610,7 +646,7 @@
   display: inline-block;
   padding: 0 6px;
   border-radius: 4px;
-  background: #9ca3af;
+  background: #b45309;
   color: #fff;
   font-weight: var(--type-heading);
   font-size: 0.78rem;
@@ -679,9 +715,18 @@
 
 .tt-comcigan-grid {
   width: 100%;
+  min-width: 0;
   border-collapse: collapse;
   font-size: 0.72rem;
   table-layout: fixed;
+}
+
+.tt-comcigan-col-period {
+  width: 44px;
+}
+
+.tt-comcigan-col-day {
+  width: 18%;
 }
 
 .tt-comcigan-grid th,
@@ -691,6 +736,14 @@
   vertical-align: middle;
   padding: 4px 3px;
   line-height: 1.25;
+  overflow: hidden;
+  max-width: 0;
+}
+
+.tt-comcigan-grid th.tt-comcigan-period-head,
+.tt-comcigan-grid th.tt-comcigan-period {
+  max-width: none;
+  overflow: visible;
 }
 
 .tt-comcigan-grid thead th {
@@ -735,7 +788,7 @@
   margin-top: 2px;
 }
 
-.tt-comcigan-col--today:not(.tt-comcigan-cell--substitute) {
+.tt-comcigan-col--today:not(.tt-comcigan-cell--substitute):not(.tt-comcigan-cell--vacated) {
   background: color-mix(in srgb, #3b82f6 10%, #fff);
 }
 
@@ -745,19 +798,25 @@
 }
 
 .tt-comcigan-cell--vacated {
-  background: #e5e7eb !important;
-  color: #4b5563;
+  background: color-mix(in srgb, #fbbf24 38%, #fff7ed) !important;
+  color: #78350f;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #d97706 72%, #fbbf24);
 }
 
 .tt-comcigan-chip--vacated .tt-comcigan-chip-main {
-  color: #6b7280;
+  color: #92400e;
   text-decoration: line-through;
-  font-weight: 500;
+  text-decoration-color: color-mix(in srgb, #b45309 80%, #78350f);
+  text-decoration-thickness: 2px;
+  font-weight: var(--type-heading);
 }
 
 .tt-comcigan-chip-badge--vacated {
-  background: #9ca3af !important;
+  background: #b45309 !important;
   color: #fff !important;
+  padding: 2px 7px;
+  font-size: 0.62rem;
+  box-shadow: 0 1px 0 color-mix(in srgb, #78350f 35%, transparent);
 }
 
 .tt-comcigan-cell--editable {
@@ -775,7 +834,8 @@
 }
 
 .tt-comcigan-cell--vacated.tt-comcigan-cell--editable .tt-comcigan-empty {
-  color: #d1d5db;
+  color: #b45309;
+  font-weight: var(--type-heading);
 }
 
 .tt-comcigan-chip--manual .tt-comcigan-chip-main {
@@ -874,6 +934,9 @@
   font-weight: var(--type-heading);
   font-size: 0.74rem;
   word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tt-comcigan-chip--sub .tt-comcigan-chip-main {
@@ -1088,28 +1151,23 @@
   flex-shrink: 0;
 }
 
-.cal-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  margin-bottom: 6px;
-  flex-shrink: 0;
-  font-size: 0.82rem;
-  text-align: center;
-}
-
 .cal-month-grid {
   flex: 1;
   min-height: 140px;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 6px 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 6px;
 }
 
 .cal-weekday {
   padding: 6px 0;
   font-weight: var(--type-heading);
+  min-width: 0;
+  font-size: 0.82rem;
+  text-align: center;
+  align-self: end;
 }
 
 .cal-weekday--sun {
@@ -1124,6 +1182,7 @@
 
 .cal-day {
   min-height: 0;
+  min-width: 0;
   padding: 8px 8px 6px;
   border-radius: 14px;
   display: flex;
@@ -1163,6 +1222,7 @@
 }
 
 .cal-day-num {
+  flex-shrink: 0;
   align-self: flex-end;
   font-weight: var(--type-heading);
   font-size: clamp(0.82rem, 2.2vw, 0.98rem);
@@ -1173,15 +1233,32 @@
 
 .cal-day-today {
   background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.cal-day-btn.cal-day-today {
+  border: 2px solid color-mix(in srgb, var(--accent) 72%, var(--border));
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 32%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.cal-day-btn.cal-day-today:hover {
+  border-color: color-mix(in srgb, var(--accent) 85%, var(--border));
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.cal-day-btn.cal-day-today.cal-day-selected {
+  border-color: color-mix(in srgb, var(--accent) 88%, var(--border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 38%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .cal-day-today .cal-day-num {
   color: var(--accent);
   font-weight: var(--type-strong);
-  box-shadow: 0 0 0 2px var(--accent);
-  border-radius: 999px;
-  padding: 4px 0;
 }
 
 .cal-day--sun:not(.cal-day-today) .cal-day-num {
@@ -1201,6 +1278,17 @@
   flex: 1;
   min-height: 0;
   justify-content: flex-start;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 1.25rem),
+    rgba(0, 0, 0, 0.85) 100%
+  );
+}
+
+.cal-day--busy:not(.cal-day-selected) {
+  background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-card, #fff) 82%);
 }
 
 .cal-chip {
@@ -1214,12 +1302,26 @@
   color: var(--text);
   text-align: left;
   line-height: 1.25;
+  flex-shrink: 0;
+  min-height: calc(1.25em + 8px);
+  box-sizing: border-box;
 }
 
 .cal-chip-more {
-  font-size: 0.68rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 0.66rem;
+  font-weight: var(--type-heading);
   color: var(--text-muted);
-  padding-left: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cal-chip--neis {
@@ -2542,12 +2644,22 @@
 }
 
 .memo-grid {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  position: relative;
   width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.memo-note-anchored {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.memo-note-anchored--dragging {
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.12));
 }
 
 .memo-note-resizable {
@@ -2658,6 +2770,20 @@
 
 .memo-note:focus-within {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.memo-note-grip {
+  flex-shrink: 0;
+  height: 20px;
+  margin: -10px -12px 8px;
+  border-radius: 12px 12px 0 0;
+  cursor: grab;
+  touch-action: none;
+  background: color-mix(in srgb, var(--memo-tint) 18%, transparent);
+}
+
+.memo-note-anchored--dragging .memo-note-grip {
+  cursor: grabbing;
 }
 
 .memo-note-remove {

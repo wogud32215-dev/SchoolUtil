@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { TodoItem } from "@/types/state";
-import { formatDueDateLong } from "@/utils/dueLabel";
+import { formatDueDateLong, formatDueLabel } from "@/utils/dueLabel";
 import { TodoCategoryBadge } from "@/components/TodoCategoryBadge";
 
 type Props = {
@@ -47,6 +47,10 @@ export function TodoWidget({ todos, onChange }: Props) {
       </div>
       <ul className="todo-table-body">
         {active.map((todo) => {
+          const dueLabel = todo.dueDate
+            ? formatDueLabel(todo.dueDate)
+            : null;
+          const isTodayDue = dueLabel?.tone === "today";
           return (
             <li key={todo.id} className="todo-row todo-row--view" role="row">
               <span className="todo-row-cat" role="cell">
@@ -64,9 +68,25 @@ export function TodoWidget({ todos, onChange }: Props) {
                   aria-label={`${todo.text} 완료`}
                 />
               </span>
-              <span className="todo-row-text" role="cell">{todo.text}</span>
-              <span className="todo-row-due muted" role="cell">
-                {todo.dueDate ? formatDueDateLong(todo.dueDate) : "—"}
+              <span
+                className={`todo-row-text${isTodayDue ? " todo-row-text--today" : ""}`}
+                role="cell"
+              >
+                {todo.text}
+              </span>
+              <span className="todo-row-due" role="cell">
+                {todo.dueDate && dueLabel ? (
+                  <span
+                    className={`todo-due todo-due--${dueLabel.tone}`}
+                    title={formatDueDateLong(todo.dueDate)}
+                  >
+                    {dueLabel.tone === "default"
+                      ? formatDueDateLong(todo.dueDate)
+                      : dueLabel.text}
+                  </span>
+                ) : (
+                  <span className="todo-due todo-due--none">—</span>
+                )}
               </span>
             </li>
           );

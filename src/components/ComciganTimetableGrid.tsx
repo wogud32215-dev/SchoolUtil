@@ -50,6 +50,12 @@ export function ComciganTimetableGrid({
   return (
     <div className="tt-scroll tt-comcigan-scroll">
       <table className="tt-grid tt-comcigan-grid">
+        <colgroup>
+          <col className="tt-comcigan-col-period" />
+          {TIMETABLE_DAY_LABELS.map((label) => (
+            <col key={label} className="tt-comcigan-col-day" />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             <th className="tt-comcigan-period-head">교시</th>

@@ -1,12 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CalendarDayModal } from "@/components/CalendarDayModal";
+import { useCalMonthChipLimit } from "@/hooks/useCalMonthChipLimit";
 import { useNeisMonthSchedule } from "@/hooks/useNeisMonthSchedule";
 import type { AppSettings, TodoItem } from "@/types/state";
 import { ymdForLocalDate } from "@/utils/dueLabel";
 import { neisYmdToDash } from "@/utils/neisYmd";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-const MAX_CHIPS = 3;
 
 type DayChip = {
   key: string;
@@ -42,6 +42,9 @@ export function CalendarWidget({
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedYmd, setSelectedYmd] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const monthGridRef = useRef<HTMLDivElement>(null);
+  const monthLayoutKey = `${viewYear}-${viewMonth}`;
+  const chipMetrics = useCalMonthChipLimit(monthGridRef, monthLayoutKey);
 
   const { items: neisItems, error: neisError } = useNeisMonthSchedule(
     settings,
@@ -137,7 +140,11 @@ export function CalendarWidget({
     goToYmd(newYmd);
   }
 
-  function chipsForDay(ymd: string): { shown: DayChip[]; more: number } {
+  function chipsForDay(ymd: string): {
+    shown: DayChip[];
+    more: number;
+    total: number;
+  } {
     const chips: DayChip[] = [];
     for (const t of todosByDay.get(ymd) ?? []) {
       chips.push({
@@ -152,8 +159,16 @@ export function CalendarWidget({
     for (const name of neis) {
       chips.push({ key: `n-${name}`, label: name, kind: "neis" });
     }
-    const shown = chips.slice(0, MAX_CHIPS);
-    return { shown, more: chips.length - shown.length };
+    const total = chips.length;
+    if (total === 0) {
+      return { shown: [], more: 0, total: 0 };
+    }
+    const cap =
+      total <= chipMetrics.maxWithoutMore
+        ? chipMetrics.maxWithoutMore
+        : chipMetrics.maxWithMore;
+    const shown = chips.slice(0, cap);
+    return { shown, more: total - shown.length, total };
   }
 
   return (
@@ -187,17 +202,21 @@ export function CalendarWidget({
           학사일정: {neisError}
         </p>
       )}
-      <div className="cal-weekdays" aria-hidden="true">
+      <div
+        ref={monthGridRef}
+        className="cal-month-grid"
+        role="grid"
+        aria-label={`${viewYear}년 ${viewMonth + 1}월`}
+      >
         {WEEKDAYS.map((d, i) => (
           <div
-            key={d}
+            key={`wd-${d}`}
+            role="columnheader"
             className={`cal-weekday muted${i === 0 ? " cal-weekday--sun" : ""}${i === 6 ? " cal-weekday--sat" : ""}`}
           >
             {d}
           </div>
         ))}
-      </div>
-      <div className="cal-month-grid" role="grid" aria-label={`${viewYear}년 ${viewMonth + 1}월`}>
         {cells.map((day, i) => {
           if (day === null) {
             return (
@@ -211,18 +230,23 @@ export function CalendarWidget({
           const ymd = ymdForLocalDate(viewYear, viewMonth + 1, day);
           const isToday = sameYmd(ymd, todayYmd);
           const isSelected = selectedYmd === ymd && modalOpen;
-          const { shown, more } = chipsForDay(ymd);
+          const { shown, more, total } = chipsForDay(ymd);
           const dow = new Date(viewYear, viewMonth, day).getDay();
           const dowClass =
             dow === 0 ? " cal-day--sun" : dow === 6 ? " cal-day--sat" : "";
+          const busyClass = more > 0 ? " cal-day--busy" : "";
+          const ariaDay =
+            total > 0
+              ? `${viewMonth + 1}월 ${day}일, 일정 ${total}건`
+              : `${viewMonth + 1}월 ${day}일`;
 
           return (
             <button
               key={`d-${day}`}
               type="button"
-              className={`cal-day cal-day-btn${dowClass}${isToday ? " cal-day-today" : ""}${isSelected ? " cal-day-selected" : ""}`}
+              className={`cal-day cal-day-btn${dowClass}${busyClass}${isToday ? " cal-day-today" : ""}${isSelected ? " cal-day-selected" : ""}`}
               onClick={() => openDay(ymd)}
-              aria-label={`${viewMonth + 1}월 ${day}일`}
+              aria-label={ariaDay}
             >
               <span className="cal-day-num">{day}</span>
               {shown.length > 0 && (
@@ -239,10 +263,10 @@ export function CalendarWidget({
                       {c.label}
                     </span>
                   ))}
-                  {more > 0 && (
-                    <span className="cal-chip-more">+{more}</span>
-                  )}
                 </div>
+              )}
+              {more > 0 && (
+                <span className="cal-chip-more">외 {more}건</span>
               )}
             </button>
           );

@@ -296,6 +296,7 @@ export type AppSettings = {
   timetableSubstituteNotifiedKey: string;
   dismissedUpdateVersion?: string;
   lastLaunchedAppVersion?: string;
+  acknowledgedAppVersion?: string;
 };
 
 export type ComciganTeacherOption = {

@@ -1,11 +1,14 @@
 import { app, BrowserWindow, Notification } from "electron";
 import electronUpdater from "electron-updater";
-import { getState } from "./store";
+import { getState, patchState } from "./store";
 import {
   notificationBodyForRelease,
   resolveReleaseHighlights,
 } from "./release-notes";
-import { formatReleaseNotesForNotification } from "../src/data/releaseNotes";
+import {
+  collectHighlightsBetween,
+  formatReleaseNotesForNotification,
+} from "../src/data/releaseNotes";
 
 const { autoUpdater } = electronUpdater;
 
@@ -25,6 +28,24 @@ export type UpdateStatus = {
 
 let mainWindowRef: (() => BrowserWindow | null) | null = null;
 
+type AppUpgradedPayload = {
+  version: string;
+  previousVersion: string;
+  releaseNotes: string[];
+};
+
+let pendingAppUpgraded: AppUpgradedPayload | null = null;
+
+function sendAppUpgradedToRenderer(payload: AppUpgradedPayload): void {
+  pendingAppUpgraded = payload;
+  sendToRenderer("update:app-upgraded", payload);
+}
+
+export function flushPendingAppUpgradedNotice(): void {
+  if (!pendingAppUpgraded) return;
+  sendToRenderer("update:app-upgraded", pendingAppUpgraded);
+}
+
 const status: UpdateStatus = {
   available: false,
   version: null,
@@ -41,9 +62,9 @@ function sendToRenderer(channel: string, payload: unknown): void {
   mainWindowRef?.()?.webContents.send(channel, payload);
 }
 
-function showUpdateNotification(title: string, body: string): void {
+function showUpdateNotification(title: string, body: string, force = false): void {
   const win = mainWindowRef?.() ?? null;
-  if (win?.isFocused()) return;
+  if (!force && win?.isFocused()) return;
   if (!Notification.isSupported()) return;
   const notification = new Notification({ title, body });
   notification.on("click", () => {
@@ -51,6 +72,31 @@ function showUpdateNotification(title: string, body: string): void {
     win?.focus();
   });
   notification.show();
+}
+
+function resolvePreviousVersionForUpgradeNotice(): string | null {
+  const current = app.getVersion();
+  const settings = getState().settings;
+  const acknowledged = settings.acknowledgedAppVersion?.trim() ?? "";
+  const lastLaunched = settings.lastLaunchedAppVersion?.trim() ?? "";
+  if (acknowledged && acknowledged !== current) return acknowledged;
+  if (!acknowledged && lastLaunched && lastLaunched !== current) {
+    return lastLaunched;
+  }
+  return null;
+}
+
+function seedAcknowledgedAppVersionIfNeeded(): void {
+  if (!app.isPackaged) return;
+  const settings = getState().settings;
+  const current = app.getVersion();
+  const acknowledged = settings.acknowledgedAppVersion?.trim() ?? "";
+  if (acknowledged) return;
+  const lastLaunched = settings.lastLaunchedAppVersion?.trim() ?? "";
+  if (lastLaunched && lastLaunched !== current) return;
+  patchState({
+    settings: { ...settings, acknowledgedAppVersion: current },
+  });
 }
 
 export function getUpdateStatus(): UpdateStatus {
@@ -134,17 +180,30 @@ export function initAutoUpdate(mainWindow: () => BrowserWindow | null): void {
   });
 }
 
-/** 재시작 후 이전 실행 버전과 다를 때 OS 알림 (배너는 렌더러) */
+/** 재시작 후 이전 실행 버전과 다를 때 OS 알림 + 렌더러 배너 */
 export function notifyIfAppWasUpgraded(): void {
   if (!app.isPackaged) return;
   const current = app.getVersion();
-  const last = getState().settings.lastLaunchedAppVersion?.trim() ?? "";
-  if (!last || last === current) return;
-  const highlights = resolveReleaseHighlights(current, null);
-  showUpdateNotification(
-    "SchoolUtil 업데이트 완료",
-    formatReleaseNotesForNotification(current, highlights),
-  );
+  const previous = resolvePreviousVersionForUpgradeNotice();
+  if (previous) {
+    const releaseNotes = collectHighlightsBetween(previous, current);
+    const payload: AppUpgradedPayload = {
+      version: current,
+      previousVersion: previous,
+      releaseNotes,
+    };
+    sendAppUpgradedToRenderer(payload);
+    showUpdateNotification(
+      "SchoolUtil 업데이트 완료",
+      formatReleaseNotesForNotification(
+        `${previous} → ${current}`,
+        releaseNotes,
+      ),
+      true,
+    );
+    return;
+  }
+  seedAcknowledgedAppVersionIfNeeded();
 }
 
 export async function checkForUpdates(): Promise<

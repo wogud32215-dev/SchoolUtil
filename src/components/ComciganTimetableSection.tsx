@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AppSettings, ComciganClassOption, ComciganTeacherOption } from "@/types/state";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { SettingsCheckbox } from "@/components/settings/SettingsCheckbox";
@@ -163,6 +163,12 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
     draft.timetableFetchMode,
     draft.timetableProxyBaseUrl,
   ]);
+
+  useEffect(() => {
+    const code = Number(draft.comciganSchoolCode);
+    if (!code || teachers.length > 0) return;
+    void reloadTeachers();
+  }, [draft.comciganSchoolCode, reloadTeachers, teachers.length]);
 
   const runSyncNow = useCallback(async () => {
     if (!api?.syncComciganTeacherTimetable) return;

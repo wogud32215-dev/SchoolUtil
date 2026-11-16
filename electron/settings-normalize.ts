@@ -419,6 +419,10 @@ export function normalizeSettings(raw: AppSettings | undefined): AppSettings {
       const v = String(raw.lastLaunchedAppVersion ?? "").trim();
       return v ? v.slice(0, 32) : undefined;
     })(),
+    acknowledgedAppVersion: (() => {
+      const v = String(raw.acknowledgedAppVersion ?? "").trim();
+      return v ? v.slice(0, 32) : undefined;
+    })(),
   };
 }
 

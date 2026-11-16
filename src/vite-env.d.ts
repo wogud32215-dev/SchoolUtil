@@ -222,6 +222,13 @@ declare global {
         transferred: number;
         total: number;
       }) => void) => () => void;
+      onAppUpgraded: (
+        listener: (payload: {
+          version: string;
+          previousVersion: string;
+          releaseNotes: string[];
+        }) => void,
+      ) => () => void;
       onStoreUpdated: (
         listener: (state: import("@/types/state").PersistedState) => void,
       ) => () => void;

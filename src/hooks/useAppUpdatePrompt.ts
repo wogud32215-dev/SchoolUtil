@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { mergeReleaseHighlights } from "@/data/releaseNotes";
+import { useCallback, useEffect, useState } from "react";
+import {
+  collectHighlightsBetween,
+  mergeReleaseHighlights,
+} from "@/data/releaseNotes";
 
 export type AppUpdateUiPhase = "idle" | "available" | "downloading" | "downloaded";
 
@@ -60,6 +63,17 @@ export function useAppUpdatePrompt({
   const [error, setError] = useState<string | null>(null);
   const [releaseNotes, setReleaseNotes] = useState<string[]>([]);
 
+  const applyReleaseNotes = useCallback(
+    (targetVersion: string | null, raw: string[]) => {
+      if (!targetVersion) {
+        setReleaseNotes(raw);
+        return;
+      }
+      setReleaseNotes(mergeReleaseHighlights(targetVersion, raw));
+    },
+    [],
+  );
+
   const syncFromStatus = useCallback(
     (s: UpdateStatusPayload) => {
       if (s.available && s.version && s.version === dismissedVersion) {
@@ -73,12 +87,12 @@ export function useAppUpdatePrompt({
       setPercent(s.downloadPercent);
       setTransferred(s.downloadTransferred);
       setTotal(s.downloadTotal);
-      setReleaseNotes(s.releaseNotes ?? []);
+      applyReleaseNotes(s.version, s.releaseNotes ?? []);
       if (s.lastError) {
         setError(s.lastError);
       }
     },
-    [dismissedVersion],
+    [applyReleaseNotes, dismissedVersion],
   );
 
   useEffect(() => {
@@ -91,18 +105,19 @@ export function useAppUpdatePrompt({
     const unAvail = window.schoolUtil?.onUpdateAvailable?.((payload) => {
       if (payload.version === dismissedVersion) return;
       setVersion(payload.version);
-      setReleaseNotes(payload.releaseNotes ?? []);
+      applyReleaseNotes(payload.version, payload.releaseNotes ?? []);
       setPhase("available");
       setError(null);
     });
     const unDown = window.schoolUtil?.onUpdateDownloaded?.((payload) => {
       setPhase("downloaded");
       setPercent(100);
+      const ver = payload?.version ?? null;
       if (payload?.releaseNotes?.length) {
-        setReleaseNotes(payload.releaseNotes);
+        applyReleaseNotes(ver, payload.releaseNotes);
       }
-      if (payload?.version) {
-        setVersion(payload.version);
+      if (ver) {
+        setVersion(ver);
       }
       setError(null);
     });
@@ -128,7 +143,7 @@ export function useAppUpdatePrompt({
       unErr?.();
       unProg?.();
     };
-  }, [dismissedVersion]);
+  }, [applyReleaseNotes, dismissedVersion]);
 
   const dismissAvailable = useCallback(() => {
     if (!version) return;
@@ -194,35 +209,89 @@ export function markUpdateCheckStarted(): void {
   setCheckFeedback("업데이트 확인 중… 잠시 후 결과가 표시됩니다.");
 }
 
+type AppUpgradedPayload = {
+  version: string;
+  previousVersion: string;
+  releaseNotes: string[];
+};
+
 type UseUpdateCompleteNoticeOptions = {
   ready: boolean;
+  acknowledgedAppVersion?: string;
   lastLaunchedAppVersion?: string;
   onAcknowledgeVersion: (version: string) => void;
 };
 
+function resolvePreviousForCompleteNotice(
+  current: string,
+  acknowledgedAppVersion?: string,
+  lastLaunchedAppVersion?: string,
+): string | null {
+  const ack = acknowledgedAppVersion?.trim() ?? "";
+  const last = lastLaunchedAppVersion?.trim() ?? "";
+  if (ack && ack !== current) return ack;
+  if (!ack && last && last !== current) return last;
+  return null;
+}
+
 /** 재시작 후 버전이 바뀌었을 때 «업데이트 완료» 배너 */
 export function useUpdateCompleteNotice({
   ready,
+  acknowledgedAppVersion,
   lastLaunchedAppVersion,
   onAcknowledgeVersion,
 }: UseUpdateCompleteNoticeOptions) {
   const [visible, setVisible] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
+  const [previousVersion, setPreviousVersion] = useState<string | null>(null);
   const [releaseNotes, setReleaseNotes] = useState<string[]>([]);
-  const bootstrapped = useRef(false);
+
+  const applyUpgradePayload = useCallback((payload: AppUpgradedPayload) => {
+    setVersion(payload.version);
+    setPreviousVersion(payload.previousVersion);
+    setReleaseNotes(
+      payload.releaseNotes.length > 0
+        ? payload.releaseNotes
+        : collectHighlightsBetween(payload.previousVersion, payload.version),
+    );
+    setVisible(true);
+  }, []);
+
+  const evaluateFromSettings = useCallback(async () => {
+    const current = await window.schoolUtil?.getAppVersion?.();
+    if (!current) return;
+    const previous = resolvePreviousForCompleteNotice(
+      current,
+      acknowledgedAppVersion,
+      lastLaunchedAppVersion,
+    );
+    if (!previous) {
+      setVisible(false);
+      return;
+    }
+    applyUpgradePayload({
+      version: current,
+      previousVersion: previous,
+      releaseNotes: collectHighlightsBetween(previous, current),
+    });
+  }, [
+    acknowledgedAppVersion,
+    applyUpgradePayload,
+    lastLaunchedAppVersion,
+  ]);
 
   useEffect(() => {
-    if (!ready || bootstrapped.current) return;
-    bootstrapped.current = true;
-    void window.schoolUtil?.getAppVersion?.().then((current) => {
-      if (!current) return;
-      const last = lastLaunchedAppVersion?.trim() ?? "";
-      if (!last || last === current) return;
-      setVersion(current);
-      setReleaseNotes(mergeReleaseHighlights(current, []));
-      setVisible(true);
+    if (!ready) return;
+    void evaluateFromSettings();
+  }, [ready, evaluateFromSettings]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const unsub = window.schoolUtil?.onAppUpgraded?.((payload) => {
+      applyUpgradePayload(payload);
     });
-  }, [ready, lastLaunchedAppVersion, onAcknowledgeVersion]);
+    return unsub;
+  }, [ready, applyUpgradePayload]);
 
   const dismiss = useCallback(() => {
     if (!version) return;
@@ -230,5 +299,5 @@ export function useUpdateCompleteNotice({
     setVisible(false);
   }, [onAcknowledgeVersion, version]);
 
-  return { visible, version, releaseNotes, dismiss };
+  return { visible, version, previousVersion, releaseNotes, dismiss };
 }

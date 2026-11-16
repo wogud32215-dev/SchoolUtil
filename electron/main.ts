@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import {
   checkForUpdates,
   downloadUpdate,
+  flushPendingAppUpgradedNotice,
   getUpdateStatus,
   initAutoUpdate,
   notifyIfAppWasUpgraded,
@@ -667,6 +668,7 @@ function createWindow(): BrowserWindow {
   });
 
   mainWindow.webContents.on("did-finish-load", () => {
+    flushPendingAppUpgradedNotice();
     if (!mainWindow || mainWindow.isDestroyed() || !isWidgetMode()) return;
     scheduleWidgetStartupSync();
   });

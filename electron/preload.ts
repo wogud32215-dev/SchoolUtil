@@ -246,6 +246,30 @@ const api = {
     ipcRenderer.on("update:progress", handler);
     return () => ipcRenderer.removeListener("update:progress", handler);
   },
+  onAppUpgraded: (
+    listener: (payload: {
+      version: string;
+      previousVersion: string;
+      releaseNotes: string[];
+    }) => void,
+  ) => {
+    const handler = (
+      _event: IpcRendererEvent,
+      payload: {
+        version: string;
+        previousVersion: string;
+        releaseNotes?: string[];
+      },
+    ) => {
+      listener({
+        version: payload.version,
+        previousVersion: payload.previousVersion,
+        releaseNotes: payload.releaseNotes ?? [],
+      });
+    };
+    ipcRenderer.on("update:app-upgraded", handler);
+    return () => ipcRenderer.removeListener("update:app-upgraded", handler);
+  },
   onStoreUpdated: (listener: (state: PersistedState) => void) => {
     const handler = (_event: IpcRendererEvent, next: PersistedState) => {
       listener(next);
