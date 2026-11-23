@@ -52,7 +52,7 @@ export function formatDueLabel(
   );
 
   if (diffDays < -1) {
-    return { text: "연체", tone: "overdue" };
+    return { text: `D+${-diffDays}`, tone: "overdue" };
   }
   if (diffDays === -1) {
     return { text: "어제", tone: "yesterday" };

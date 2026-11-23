@@ -6,6 +6,13 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.1.0",
+    highlights: [
+      "컴시간: 학교 검색·교사·과목 필드 암호화 복호화",
+      "할 일: 연체 마감일 D+N 표기",
+    ],
+  },
+  {
     version: "1.0.9",
     highlights: [
       "컴시간: 암호화 응답·사이트 구조 변경 대응",

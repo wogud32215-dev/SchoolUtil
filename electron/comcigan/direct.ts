@@ -25,6 +25,7 @@ import {
   parseSchoolSearch,
   resolveComciganClassIndices,
   resolveComciganTeacherIndex,
+  teachersFromTimetableJson,
   type ComciganClassOption,
   type ComciganSchoolRow,
   type ComciganTeacherOption,
@@ -366,11 +367,8 @@ export async function fetchTeacherTimetableDirect(
   schoolLabel?: string,
 ): Promise<TimetableData> {
   const { jsonText, routes } = await fetchTimetableJson(schoolCode);
-  const dataTeachers = JSON.parse(jsonText) as Record<string, unknown>;
-  const teachers = dataTeachers[`자료${routes.teacherCode}`] as
-    | string[]
-    | undefined;
-  if (!teachers?.length) {
+  const teachers = teachersFromTimetableJson(jsonText, routes.teacherCode);
+  if (!teachers.length) {
     throw new Error("컴시간 시간표 응답을 읽지 못했습니다.");
   }
   const resolved = resolveComciganTeacherIndex(

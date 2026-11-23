@@ -1,4 +1,5 @@
 import iconv from "iconv-lite";
+import { qnmsbChange, qnmsbChangeNumber } from "./nmsb-change";
 import type { ServiceProtocol } from "./service-protocol";
 
 export type ComciganSchoolRow = {
@@ -38,31 +39,81 @@ export function decodeComciResponseText(buf: Buffer): string {
   return iconv.decode(buf, "euc-kr").replace(/\0/g, "");
 }
 
+function resolveSchoolCodeFromRow(
+  row: unknown[],
+  divisor: number | null | undefined,
+  offset: number,
+): number | null {
+  let schoolCode: number | null = null;
+  const fallback = row[3];
+  if (typeof fallback === "number" && Number.isFinite(fallback)) {
+    schoolCode = fallback;
+  } else {
+    schoolCode = qnmsbChangeNumber(fallback);
+  }
+
+  if (divisor && divisor > 0 && typeof row[0] === "number") {
+    const column = Math.floor(row[0] / divisor) + offset;
+    if (column >= 3 && column < row.length) {
+      const cell = row[column];
+      if (typeof cell === "number" && Number.isFinite(cell)) {
+        schoolCode = cell;
+      } else {
+        const decoded = qnmsbChangeNumber(cell);
+        if (decoded != null) schoolCode = decoded;
+      }
+    }
+  }
+
+  return schoolCode;
+}
+
+/** 컴시간 `Q성명` — 복호화 후 마스킹 `*` 처리 */
+export function normalizeComciganTeacherName(encoded: unknown): string {
+  const name = qnmsbChange(encoded);
+  if (
+    (name.includes("*") && !name.startsWith("*") && !name.endsWith("*")) ||
+    (name.length === 2 && name[1] === "*")
+  ) {
+    return name;
+  }
+  return name.replace("*", "");
+}
+
+function decodeComciganTeachers(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => normalizeComciganTeacherName(item));
+}
+
+function decodeComciganSubjects(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => qnmsbChange(item));
+}
+
 export function parseSchoolSearch(
   jsonText: string,
   protocol?: Pick<ServiceProtocol, "schoolDivisor" | "schoolOffset">,
 ): ComciganSchoolRow[] {
   const data = JSON.parse(jsonText) as {
-    학교검색?: [number, string, string, number][];
+    학교검색?: unknown[][];
   };
   const rows = data.학교검색 ?? [];
   const divisor = protocol?.schoolDivisor;
   const offset = protocol?.schoolOffset ?? 0;
   const out: ComciganSchoolRow[] = [];
   for (const row of rows) {
-    if (row.length < 4) continue;
-    if (row[0] === 0 && row[3] === 0) continue;
-    let schoolCode = row[3];
-    if (divisor && divisor > 0) {
-      const column = Math.floor(row[0] / divisor) + offset;
-      if (column >= 3 && column < row.length && typeof row[column] === "number") {
-        schoolCode = row[column];
-      }
-    }
+    if (!Array.isArray(row) || row.length < 4) continue;
+    const regionCode = row[0];
+    if (typeof regionCode !== "number") continue;
+    if (regionCode === 0) continue;
+
+    const schoolCode = resolveSchoolCodeFromRow(row, divisor, offset);
+    if (schoolCode == null || schoolCode <= 0) continue;
+
     out.push({
-      regionCode: row[0],
-      regionName: row[1],
-      schoolName: row[2],
+      regionCode,
+      regionName: qnmsbChange(row[1]),
+      schoolName: qnmsbChange(row[2]),
       schoolCode,
     });
   }
@@ -134,8 +185,8 @@ export function parseFullTimetable(
   },
 ): ComciganLessonCell[][][][] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  const teachers = data[`자료${codes.teacherCode}`] as string[];
-  const subjects = data[`자료${codes.subjectCode}`] as string[];
+  const teachers = decodeComciganTeachers(data[`자료${codes.teacherCode}`]);
+  const subjects = decodeComciganSubjects(data[`자료${codes.subjectCode}`]);
   const original = data[`자료${codes.originalCode}`] as number[][][][];
   const now = data[`자료${codes.dayCode}`] as number[][][][];
 
@@ -240,9 +291,17 @@ export function listTeachersFromTimetableJson(
   teacherCode: string,
 ): ComciganTeacherOption[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  const teachers = data[`자료${teacherCode}`] as string[] | undefined;
-  if (!teachers) return [];
+  const teachers = decodeComciganTeachers(data[`자료${teacherCode}`]);
+  if (!teachers.length) return [];
   return buildComciganTeacherOptions(teachers);
+}
+
+export function teachersFromTimetableJson(
+  jsonText: string,
+  teacherCode: string,
+): string[] {
+  const data = JSON.parse(jsonText) as RawTimetableJson;
+  return decodeComciganTeachers(data[`자료${teacherCode}`]);
 }
 
 export function listClassesFromFull(
