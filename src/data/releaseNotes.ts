@@ -6,6 +6,13 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.1.1",
+    highlights: [
+      "내선번호: 엑셀 양식 받기·가져오기로 일괄 추가(추가·전체 교체)",
+      "설치본 docs에 내선번호 양식 파일 포함",
+    ],
+  },
+  {
     version: "1.1.0",
     highlights: [
       "컴시간: 학교 검색·교사·과목 필드 암호화 복호화",

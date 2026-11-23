@@ -4,6 +4,10 @@ import type {
   ExtensionDirectory,
   ExtensionSection,
 } from "@/types/extensions";
+import {
+  mergeExtensionImport,
+  type ExtensionImportMode,
+} from "@/utils/extensionSpreadsheet";
 
 type Props = {
   open: boolean;
@@ -35,6 +39,9 @@ export function ExtensionDirectoryModal({
   const [newDept, setNewDept] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [newExt, setNewExt] = useState("");
+  const [importMode, setImportMode] = useState<ExtensionImportMode>("merge");
+  const [sheetStatus, setSheetStatus] = useState<string | null>(null);
+  const [sheetBusy, setSheetBusy] = useState(false);
 
   const sections = editMode ? draft.sections : directory.sections;
 
@@ -64,6 +71,7 @@ export function ExtensionDirectoryModal({
     setDraft(directory);
     setEditMode(false);
     setFilter("");
+    setSheetStatus(null);
   }
 
   function handleClose() {
@@ -135,6 +143,72 @@ export function ExtensionDirectoryModal({
   function saveEdits() {
     onSave(draft);
     setEditMode(false);
+  }
+
+  async function downloadTemplate() {
+    setSheetBusy(true);
+    setSheetStatus(null);
+    const res = await window.schoolUtil?.downloadExtensionTemplate?.();
+    setSheetBusy(false);
+    if (!res) {
+      setSheetStatus("Electron 앱에서만 사용할 수 있습니다.");
+      return;
+    }
+    if (!res.ok && "cancelled" in res && res.cancelled) return;
+    if (res.ok) {
+      setSheetStatus("엑셀 양식을 저장했습니다. «입력» 시트에 적은 뒤 가져오기를 누르세요.");
+    } else if (!res.ok && "error" in res) {
+      setSheetStatus(res.error ?? "양식 저장에 실패했습니다.");
+    }
+  }
+
+  async function exportSpreadsheet() {
+    setSheetBusy(true);
+    setSheetStatus(null);
+    const res = await window.schoolUtil?.exportExtensionSpreadsheet?.(draft);
+    setSheetBusy(false);
+    if (!res) {
+      setSheetStatus("Electron 앱에서만 사용할 수 있습니다.");
+      return;
+    }
+    if (!res.ok && "cancelled" in res && res.cancelled) return;
+    if (res.ok) {
+      setSheetStatus("현재 편집 중인 목록을 엑셀로 저장했습니다.");
+    } else if (!res.ok && "error" in res) {
+      setSheetStatus(res.error ?? "내보내기에 실패했습니다.");
+    }
+  }
+
+  async function importSpreadsheet() {
+    if (importMode === "replace") {
+      const ok = window.confirm(
+        "파일 내용으로 내선 목록 전체를 바꿉니다. 계속할까요?",
+      );
+      if (!ok) return;
+    }
+    setSheetBusy(true);
+    setSheetStatus(null);
+    const res = await window.schoolUtil?.importExtensionSpreadsheet?.();
+    setSheetBusy(false);
+    if (!res) {
+      setSheetStatus("Electron 앱에서만 사용할 수 있습니다.");
+      return;
+    }
+    if (!res.ok && "cancelled" in res && res.cancelled) return;
+    if (!res.ok) {
+      if ("error" in res) setSheetStatus(res.error ?? "가져오기에 실패했습니다.");
+      return;
+    }
+    const { next, added, skipped, invalid } = mergeExtensionImport(
+      draft,
+      res.rows,
+      importMode,
+    );
+    persistDraft(next);
+    const parts = [`${added}건 반영`];
+    if (skipped > 0) parts.push(`${skipped}건 중복 건너뜀`);
+    if (invalid > 0) parts.push(`${invalid}건 빈 칸·오류`);
+    setSheetStatus(parts.join(" · "));
   }
 
   let lastArea = "";
@@ -260,6 +334,68 @@ export function ExtensionDirectoryModal({
 
         {editMode ? (
           <footer className="extension-modal-add">
+            <div className="extension-sheet-block">
+              <p className="extension-add-title">엑셀 양식으로 추가</p>
+              <p className="muted extension-sheet-hint">
+                양식을 받아 «입력» 시트에 한 줄씩 적고 가져오면 자동으로 목록에
+                넣습니다.
+              </p>
+              <div className="extension-sheet-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={sheetBusy}
+                  onClick={() => void downloadTemplate()}
+                >
+                  양식 받기
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={sheetBusy}
+                  onClick={() => void exportSpreadsheet()}
+                >
+                  현재 목록 내보내기
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={sheetBusy}
+                  onClick={() => void importSpreadsheet()}
+                >
+                  엑셀 가져오기
+                </button>
+              </div>
+              <div
+                className="extension-sheet-mode"
+                role="radiogroup"
+                aria-label="가져오기 방식"
+              >
+                <label className="extension-sheet-radio">
+                  <input
+                    type="radio"
+                    name="extension-import-mode"
+                    checked={importMode === "merge"}
+                    onChange={() => setImportMode("merge")}
+                  />
+                  기존 목록에 추가
+                </label>
+                <label className="extension-sheet-radio">
+                  <input
+                    type="radio"
+                    name="extension-import-mode"
+                    checked={importMode === "replace"}
+                    onChange={() => setImportMode("replace")}
+                  />
+                  파일로 전체 교체
+                </label>
+              </div>
+              {sheetStatus ? (
+                <p className="extension-sheet-status" role="status">
+                  {sheetStatus}
+                </p>
+              ) : null}
+            </div>
             <p className="extension-add-title">수동 추가</p>
             <div className="extension-add-grid">
               <input

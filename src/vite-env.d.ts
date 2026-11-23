@@ -162,6 +162,26 @@ declare global {
       >;
       exportBackup: () => Promise<BackupResult>;
       importBackup: () => Promise<BackupResult>;
+      downloadExtensionTemplate: () => Promise<
+        | { ok: true; path: string }
+        | { ok: false; cancelled: true }
+        | { ok: false; error: string }
+      >;
+      exportExtensionSpreadsheet: (
+        directory: import("@/types/extensions").ExtensionDirectory,
+      ) => Promise<
+        | { ok: true; path: string }
+        | { ok: false; cancelled: true }
+        | { ok: false; error: string }
+      >;
+      importExtensionSpreadsheet: () => Promise<
+        | {
+            ok: true;
+            rows: import("@/utils/extensionSpreadsheet").ExtensionImportRow[];
+          }
+        | { ok: false; cancelled: true }
+        | { ok: false; error: string }
+      >;
       pickDockShortcut: (
         currentCount: number,
       ) => Promise<

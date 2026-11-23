@@ -25,6 +25,12 @@ import {
 } from "./auto-update";
 import { exportStateToFile, importStateFromFile } from "./backup";
 import {
+  parseExtensionSpreadsheetFile,
+  writeExtensionExportFile,
+  writeExtensionTemplateFile,
+} from "./extension-spreadsheet";
+import { normalizeExtensionDirectory } from "./extensions-normalize";
+import {
   launchDockShortcut,
   MAX_DOCK_SHORTCUTS,
   pickDockShortcut,
@@ -941,6 +947,80 @@ function registerIpc() {
       return {
         ok: false as const,
         error: e instanceof Error ? e.message : "불러오기 실패",
+      };
+    }
+  });
+
+  ipcMain.handle("extensions:download-template", async () => {
+    const result = await dialog.showSaveDialog({
+      title: "내선번호 엑셀 양식 저장",
+      defaultPath: `SchoolUtil-내선번호-양식.xlsx`,
+      filters: [{ name: "Excel", extensions: ["xlsx"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false as const, cancelled: true as const };
+    }
+    try {
+      await writeExtensionTemplateFile(result.filePath);
+      return { ok: true as const, path: result.filePath };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "양식 저장 실패",
+      };
+    }
+  });
+
+  ipcMain.handle(
+    "extensions:export-spreadsheet",
+    async (_event, raw: unknown) => {
+      const directory = normalizeExtensionDirectory(raw);
+      const result = await dialog.showSaveDialog({
+        title: "내선번호 목록 내보내기",
+        defaultPath: `SchoolUtil-내선번호-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        filters: [{ name: "Excel", extensions: ["xlsx"] }],
+      });
+      if (result.canceled || !result.filePath) {
+        return { ok: false as const, cancelled: true as const };
+      }
+      try {
+        await writeExtensionExportFile(result.filePath, directory);
+        return { ok: true as const, path: result.filePath };
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : "내보내기 실패",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle("extensions:import-spreadsheet", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "내선번호 엑셀 가져오기",
+      filters: [
+        { name: "스프레드시트", extensions: ["xlsx", "csv"] },
+        { name: "Excel", extensions: ["xlsx", "xls"] },
+        { name: "CSV", extensions: ["csv"] },
+      ],
+      properties: ["openFile"],
+    });
+    if (result.canceled || !result.filePaths[0]) {
+      return { ok: false as const, cancelled: true as const };
+    }
+    try {
+      const rows = await parseExtensionSpreadsheetFile(result.filePaths[0]);
+      if (rows.length === 0) {
+        return {
+          ok: false as const,
+          error: "읽을 수 있는 행이 없습니다. «입력» 시트와 열 이름을 확인해 주세요.",
+        };
+      }
+      return { ok: true as const, rows };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "파일을 읽지 못했습니다.",
       };
     }
   });

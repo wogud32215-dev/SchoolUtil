@@ -135,6 +135,29 @@ const api = {
     >,
   exportBackup: () => ipcRenderer.invoke("backup:export"),
   importBackup: () => ipcRenderer.invoke("backup:import"),
+  downloadExtensionTemplate: () =>
+    ipcRenderer.invoke("extensions:download-template") as Promise<
+      | { ok: true; path: string }
+      | { ok: false; cancelled: true }
+      | { ok: false; error: string }
+    >,
+  exportExtensionSpreadsheet: (
+    directory: import("../src/types/extensions").ExtensionDirectory,
+  ) =>
+    ipcRenderer.invoke("extensions:export-spreadsheet", directory) as Promise<
+      | { ok: true; path: string }
+      | { ok: false; cancelled: true }
+      | { ok: false; error: string }
+    >,
+  importExtensionSpreadsheet: () =>
+    ipcRenderer.invoke("extensions:import-spreadsheet") as Promise<
+      | {
+          ok: true;
+          rows: import("../src/utils/extensionSpreadsheet").ExtensionImportRow[];
+        }
+      | { ok: false; cancelled: true }
+      | { ok: false; error: string }
+    >,
   pickDockShortcut: (currentCount: number) =>
     ipcRenderer.invoke("dock:pick-shortcut", { currentCount }) as Promise<
       | { ok: true; item: import("../src/types/state").DockShortcutItem }

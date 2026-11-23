@@ -1,6 +1,6 @@
 {
   "name": "schoolutil",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "SchoolUtil — Windows 바탕화면 종합 유틸",
   "main": "dist-electron/bootstrap.js",
   "author": "SchoolUtil",
@@ -31,13 +31,15 @@
     "dist:publish": "npm run build && electron-builder --win --publish always",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "extensions:template": "node scripts/generate-extension-template.mjs"
   },
   "dependencies": {
     "@fontsource/pretendard": "^5.3.0",
     "chrome-remote-interface": "^0.34.0",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.6.2",
+    "exceljs": "^4.4.0",
     "iconv-lite": "^0.7.3",
     "koffi": "^2.10.1",
     "react": "^19.0.0",
