@@ -17,10 +17,17 @@ export function decodeComciganResponse(
   if (!key) {
     return parseJsonObject(trimmed);
   }
-  const encVersion = version ?? "enc5";
   const fields = trimmed.split(":");
-  if (fields.length !== 4 || fields[0] !== encVersion) {
+  if (fields.length !== 4) {
     throw new Error("Encrypted response protocol mismatch");
+  }
+  let encVersion = version ?? "enc5";
+  if (fields[0] !== encVersion) {
+    if (/^\d{4}$/.test(fields[0] ?? "") || String(fields[0]).startsWith("enc")) {
+      encVersion = fields[0]!;
+    } else {
+      throw new Error("Encrypted response protocol mismatch");
+    }
   }
 
   const parts = fields.slice(1).map((field) => Buffer.from(field, "base64"));

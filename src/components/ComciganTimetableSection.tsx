@@ -190,7 +190,7 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
     <>
       <SettingsRow
         title="교사 시간표 (컴시간)"
-        hint="이번 주 교체가 반영된 표를 가져옵니다. 자동 갱신은 08:00·13:00과 앱 시작 시입니다. 시간표 빈 칸(+)에서 «매주» 또는 «이번 주만»을 고를 수 있습니다."
+        hint="이번 주 교체·빠짐이 반영된 표를 가져옵니다. 자동 갱신은 평일 수업 시간(07:30~18:00) 30분마다, 08:00·13:00, 앱 시작 시입니다. 빈 칸(+)에서 «매주» 또는 «이번 주만» 보정이 가능합니다."
       >
         <SettingsCheckbox
           checked={draft.timetableAutoSync}
@@ -390,8 +390,17 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         ) : null}
       </SettingsRow>
 
-      <SettingsRow title="갱신 상태">
-        <p className="muted" style={{ margin: 0 }}>
+      <SettingsRow
+        title="갱신 상태"
+        hint="자동 갱신을 켜면 평일 수업 시간에 주기적으로 컴시간을 다시 받습니다."
+      >
+        <SettingsCheckbox
+          checked={draft.timetableAutoSync}
+          onChange={(v) => onPatch({ timetableAutoSync: v })}
+        >
+          자동 갱신 사용
+        </SettingsCheckbox>
+        <p className="muted" style={{ margin: "8px 0 0" }}>
           마지막 성공: {formatSyncTime(draft.timetableLastSyncAt)}
           {draft.timetableLastSyncVia
             ? ` · ${draft.timetableLastSyncVia === "s2h9" ? "s2h9" : "직접"}`

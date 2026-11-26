@@ -58,15 +58,29 @@ export function ComciganSubstituteModal({
                         {e.originalSubject}
                       </span>
                     </div>
-                    <div className="comcigan-substitute-diff-row">
-                      <span className="comcigan-substitute-diff-label">변경</span>
-                      <span className="comcigan-substitute-diff-value comcigan-substitute-diff-value--now">
-                        {e.classCode
-                          ? `${formatClassCodeDisplay(e.classCode, classLabelMode)} ${e.subject}`.trim()
-                          : e.subject}
-                        <span className="comcigan-substitute-inline-badge">교체</span>
-                      </span>
-                    </div>
+                    {e.vacated ? (
+                      <div className="comcigan-substitute-diff-row">
+                        <span className="comcigan-substitute-diff-label">변경</span>
+                        <span className="comcigan-substitute-diff-value comcigan-substitute-diff-value--now">
+                          {e.classCode
+                            ? `${formatClassCodeDisplay(e.classCode, classLabelMode)} 수업 빠짐`
+                            : "수업 빠짐"}
+                          <span className="comcigan-substitute-inline-badge comcigan-substitute-inline-badge--vacated">
+                            빠짐
+                          </span>
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="comcigan-substitute-diff-row">
+                        <span className="comcigan-substitute-diff-label">변경</span>
+                        <span className="comcigan-substitute-diff-value comcigan-substitute-diff-value--now">
+                          {e.classCode
+                            ? `${formatClassCodeDisplay(e.classCode, classLabelMode)} ${e.subject}`.trim()
+                            : e.subject}
+                          <span className="comcigan-substitute-inline-badge">교체</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}

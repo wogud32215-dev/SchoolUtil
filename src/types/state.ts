@@ -95,6 +95,7 @@ export type TimetableSubstituteChange = {
   classCode: string;
   subject: string;
   originalSubject: string;
+  vacated?: boolean;
 };
 
 export type ComciganTimetableView = {

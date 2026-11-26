@@ -4,9 +4,68 @@ import type { AppSettings, ComciganSyncedTimetable } from "./store";
 import { getState, patchState } from "./store";
 
 const SYNC_HOURS = [8, 13];
+const INTERVAL_MS = 30 * 60 * 1000;
+const SCHOOL_OPEN = { hour: 7, minute: 30 };
+const SCHOOL_CLOSE = { hour: 18, minute: 0 };
 
 let timers: ReturnType<typeof setTimeout>[] = [];
 let running = false;
+
+function isWeekday(d: Date): boolean {
+  const w = d.getDay();
+  return w >= 1 && w <= 5;
+}
+
+function atLocalTime(d: Date, hour: number, minute: number): Date {
+  const x = new Date(d);
+  x.setHours(hour, minute, 0, 0);
+  return x;
+}
+
+function inSchoolSyncWindow(now: Date): boolean {
+  if (!isWeekday(now)) return false;
+  const open = atLocalTime(now, SCHOOL_OPEN.hour, SCHOOL_OPEN.minute);
+  const close = atLocalTime(now, SCHOOL_CLOSE.hour, SCHOOL_CLOSE.minute);
+  return now >= open && now < close;
+}
+
+/** 다음 평일 07:30 (현재가 창 안이면 그대로 반환하지 않음) */
+function nextSchoolOpen(from: Date): Date {
+  const probe = new Date(from);
+  for (let offset = 0; offset < 10; offset++) {
+    if (offset > 0) {
+      probe.setDate(probe.getDate() + 1);
+    }
+    if (!isWeekday(probe)) continue;
+    const open = atLocalTime(probe, SCHOOL_OPEN.hour, SCHOOL_OPEN.minute);
+    if (from < open) return open;
+    const close = atLocalTime(probe, SCHOOL_CLOSE.hour, SCHOOL_CLOSE.minute);
+    if (from < close) {
+      return open;
+    }
+  }
+  const fallback = new Date(from);
+  fallback.setDate(fallback.getDate() + 1);
+  return atLocalTime(fallback, SCHOOL_OPEN.hour, SCHOOL_OPEN.minute);
+}
+
+function scheduleIntervalSyncLoop(): void {
+  const now = new Date();
+  const delay = inSchoolSyncWindow(now)
+    ? INTERVAL_MS
+    : Math.max(1000, nextSchoolOpen(now).getTime() - now.getTime());
+  const timer = setTimeout(() => {
+    const tick = new Date();
+    if (inSchoolSyncWindow(tick)) {
+      void runTimetableAutoSync("schedule").finally(() =>
+        scheduleIntervalSyncLoop(),
+      );
+    } else {
+      scheduleIntervalSyncLoop();
+    }
+  }, delay);
+  timers.push(timer);
+}
 
 function localIsoNow(): string {
   return new Date().toISOString();
@@ -123,6 +182,7 @@ function scheduleNext(): void {
 export function startTimetableAutoSyncScheduler(): void {
   stopTimetableAutoSyncScheduler();
   scheduleNext();
+  scheduleIntervalSyncLoop();
   void runTimetableAutoSync("startup");
 }
 

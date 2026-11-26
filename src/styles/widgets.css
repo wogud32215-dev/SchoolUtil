@@ -1092,6 +1092,10 @@
   color: #fff;
 }
 
+.comcigan-substitute-inline-badge--vacated {
+  background: #b45309;
+}
+
 .comcigan-substitute-footer {
   padding: 12px 20px 18px;
   display: flex;

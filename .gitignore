@@ -15,3 +15,7 @@ config/neis-shared.key
 config/web3forms-access.key
 build/neis-shared.v1.bin
 build/web3forms-access.key
+scripts/comcigan-decoded-*.js
+scripts/debug-comcigan-*.mjs
+scripts/comcigan-scan-*.mjs
+scripts/test-decode-quality.mjs

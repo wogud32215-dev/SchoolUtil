@@ -15,6 +15,8 @@ export type ComciganLessonCell = {
   /** 컴시간 `자료*` 교사 배열 인덱스 (-1 = 없음) */
   teacherIndex: number;
   changed: boolean;
+  /** 이번 주 현재 칸은 비었으나 원래 수업이 있었음 (취소·공강) */
+  removed?: boolean;
   originalSubject?: string;
   originalTeacher?: string;
   originalTeacherIndex?: number;
@@ -122,6 +124,107 @@ export function parseSchoolSearch(
 
 type RawTimetableJson = Record<string, unknown>;
 
+function nestedDepth(value: unknown): number {
+  if (!Array.isArray(value)) return 0;
+  if (value.length === 0) return 1;
+  return 1 + Math.max(...value.map((item) => nestedDepth(item)));
+}
+
+function isLikelyTeacherList(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length < 5) return false;
+  return value.every(
+    (item) =>
+      typeof item === "string" ||
+      typeof item === "number" ||
+      item === "*" ||
+      item === "",
+  );
+}
+
+function isLikelySubjectList(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length < 5) return false;
+  return value.every((item) => typeof item === "string" || typeof item === "number");
+}
+
+export function inferTimetableDataCodes(data: RawTimetableJson): {
+  teacherCode: string;
+  subjectCode: string;
+  originalCode: string;
+  dayCode: string;
+} | null {
+  const pool: Record<string, unknown> = { ...data };
+  const bag = data.자료;
+  if (bag && typeof bag === "object" && !Array.isArray(bag)) {
+    Object.assign(pool, bag as Record<string, unknown>);
+  }
+
+  let teacherCode = "";
+  let teacherLen = 0;
+  let subjectCode = "";
+  let subjectLen = 0;
+  const gridCodes: string[] = [];
+
+  for (const [key, value] of Object.entries(pool)) {
+    if (!/^[A-Z]{3}\d{3}$/.test(key)) continue;
+    if (isLikelyTeacherList(value)) {
+      const len = (value as unknown[]).length;
+      if (len > teacherLen) {
+        teacherCode = key;
+        teacherLen = len;
+      }
+      continue;
+    }
+    if (isLikelySubjectList(value)) {
+      const len = (value as unknown[]).length;
+      if (len > subjectLen) {
+        subjectCode = key;
+        subjectLen = len;
+      }
+      continue;
+    }
+    if (nestedDepth(value) >= 4) {
+      gridCodes.push(key);
+    }
+  }
+
+  if (!teacherCode || !subjectCode || gridCodes.length < 2) {
+    return null;
+  }
+
+  let originalCode = gridCodes[0]!;
+  let dayCode = gridCodes[1]!;
+  if (gridCodes.length === 2) {
+    const aDepth = nestedDepth(resolveComciganMaterial(data, originalCode));
+    const bDepth = nestedDepth(resolveComciganMaterial(data, dayCode));
+    if (aDepth < bDepth) {
+      [originalCode, dayCode] = [dayCode, originalCode];
+    }
+  }
+
+  return {
+    teacherCode,
+    subjectCode,
+    originalCode,
+    dayCode,
+  };
+}
+
+function resolveComciganMaterial(
+  data: RawTimetableJson,
+  code: string,
+): unknown {
+  const direct = data[code];
+  if (direct !== undefined) return direct;
+  const flat = data[`자료${code}`];
+  if (flat !== undefined) return flat;
+  const bag = data.자료;
+  if (bag && typeof bag === "object" && !Array.isArray(bag)) {
+    const nested = (bag as Record<string, unknown>)[code];
+    if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
 /** 컴시간 «변경알림» 학교: `>` 접두가 있을 때만 이번 주 변경으로 본다 */
 export function isComciganMarkedChange(raw: unknown): boolean {
   return typeof raw === "string" && raw.trim().startsWith(">");
@@ -133,14 +236,34 @@ function comciganCellChanged(
   pNow: number,
   pOrigin: number,
   changeNotifications: boolean,
+  teachers: string[],
+  subjects: string[],
+  teachersLen: number,
 ): boolean {
-  if (changeNotifications) {
-    return isComciganMarkedChange(rawNow);
+  if (!changeNotifications) {
+    return (
+      rawNow !== rawOrigin &&
+      (pNow !== pOrigin || String(rawNow) !== String(rawOrigin))
+    );
   }
-  return (
-    rawNow !== rawOrigin &&
-    (pNow !== pOrigin || String(rawNow) !== String(rawOrigin))
-  );
+  if (isComciganMarkedChange(rawNow)) return true;
+  if (pOrigin > 0 && pNow === 0) return true;
+  if (pOrigin > 0 && pNow > 0) {
+    const nowCell = decodePeriodCell(rawNow, teachers, subjects, teachersLen);
+    const origCell = decodePeriodCell(
+      rawOrigin,
+      teachers,
+      subjects,
+      teachersLen,
+    );
+    if (
+      nowCell.teacherIndex !== origCell.teacherIndex ||
+      nowCell.subject !== origCell.subject
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** 교시 코드: 숫자 또는 교체 표시 접두(`>13013` 등) */
@@ -185,10 +308,22 @@ export function parseFullTimetable(
   },
 ): ComciganLessonCell[][][][] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  const teachers = decodeComciganTeachers(data[`자료${codes.teacherCode}`]);
-  const subjects = decodeComciganSubjects(data[`자료${codes.subjectCode}`]);
-  const original = data[`자료${codes.originalCode}`] as number[][][][];
-  const now = data[`자료${codes.dayCode}`] as number[][][][];
+  const resolved =
+    !codes.originalCode || !codes.dayCode
+      ? (inferTimetableDataCodes(data) ?? codes)
+      : codes;
+  const teachers = decodeComciganTeachers(
+    resolveComciganMaterial(data, resolved.teacherCode),
+  );
+  const subjects = decodeComciganSubjects(
+    resolveComciganMaterial(data, resolved.subjectCode),
+  );
+  const original = resolveComciganMaterial(data, resolved.originalCode) as
+    | number[][][][]
+    | undefined;
+  const now = resolveComciganMaterial(data, resolved.dayCode) as
+    | number[][][][]
+    | undefined;
 
   if (!teachers?.length || !subjects?.length || !original || !now) {
     throw new Error("컴시간 시간표 응답을 읽지 못했습니다.");
@@ -216,14 +351,13 @@ export function parseFullTimetable(
             pNow,
             pOrigin,
             changeNotifications,
+            teachers,
+            subjects,
+            teachersLen,
           );
-          const useOriginForDisplay =
-            changeNotifications &&
-            !isComciganMarkedChange(rawNow) &&
-            pNow === 0 &&
-            pOrigin > 0;
+          const removed = pOrigin > 0 && pNow === 0;
           const nowCell = decodePeriodCell(
-            useOriginForDisplay ? rawOrigin : rawNow,
+            rawNow,
             teachers,
             subjects,
             teachersLen,
@@ -232,7 +366,8 @@ export function parseFullTimetable(
             subject: nowCell.subject,
             teacher: nowCell.teacher,
             teacherIndex: nowCell.teacherIndex,
-            changed,
+            changed: changed || removed,
+            removed: removed || undefined,
           };
           if (pOrigin > 0) {
             const origCell = decodePeriodCell(
@@ -291,7 +426,9 @@ export function listTeachersFromTimetableJson(
   teacherCode: string,
 ): ComciganTeacherOption[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  const teachers = decodeComciganTeachers(data[`자료${teacherCode}`]);
+  const teachers = decodeComciganTeachers(
+    resolveComciganMaterial(data, teacherCode),
+  );
   if (!teachers.length) return [];
   return buildComciganTeacherOptions(teachers);
 }
@@ -301,7 +438,7 @@ export function teachersFromTimetableJson(
   teacherCode: string,
 ): string[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  return decodeComciganTeachers(data[`자료${teacherCode}`]);
+  return decodeComciganTeachers(resolveComciganMaterial(data, teacherCode));
 }
 
 export function listClassesFromFull(

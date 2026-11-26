@@ -8,13 +8,15 @@ import type {
 } from "../store";
 import { labelForComciganClassCode } from "./class-labels";
 import { periodStartTimes, weekDatesFromMonday } from "./week-meta";
-import { fetchText } from "./http";
+import { fetchText, postComciText } from "./http";
 import { decodeComciganResponse } from "./encrypted-response";
 import {
   COMCI_BASE_URL,
-  encodeSchoolSearchPath,
-  encodeTimetablePath,
+  buildSchoolSearchRequest,
+  buildTimetableRequest,
   getComciganSession,
+  patchComciganRoutesFromPayload,
+  type ComciganApiRequest,
   type ComciganRoutes,
   type ComciganSession,
 } from "./routes";
@@ -41,12 +43,20 @@ function classLabelForMode(
 }
 
 async function fetchComciganPayload(
-  path: string,
+  request: ComciganApiRequest,
   session: ComciganSession,
 ): Promise<Record<string, unknown>> {
-  const text = await fetchText(`${COMCI_BASE_URL}${path}`, {
-    requestToken: session.protocol.requestToken,
-  });
+  const token = session.protocol.requestToken;
+  const text =
+    request.method === "POST"
+      ? await postComciText(
+          `${COMCI_BASE_URL}${request.path}`,
+          request.body ?? "",
+          { requestToken: token },
+        )
+      : await fetchText(`${COMCI_BASE_URL}${request.path}`, {
+          requestToken: token,
+        });
   return decodeComciganResponse(
     text,
     session.protocol.key,
@@ -64,8 +74,8 @@ export async function searchComciganSchools(
   const q = query.trim();
   if (q.length < 2) return [];
   const session = await getComciganSession();
-  const path = encodeSchoolSearchPath(session, q);
-  const data = await fetchComciganPayload(path, session);
+  const request = buildSchoolSearchRequest(session, q);
+  const data = await fetchComciganPayload(request, session);
   return parseSchoolSearch(timetableJsonText(data), session.protocol);
 }
 
@@ -74,8 +84,9 @@ export async function fetchTimetableJson(
   weekIndex = 1,
 ): Promise<{ jsonText: string; routes: ComciganRoutes }> {
   const session = await getComciganSession();
-  const path = encodeTimetablePath(session, schoolCode, weekIndex);
-  const data = await fetchComciganPayload(path, session);
+  const request = buildTimetableRequest(session, schoolCode, weekIndex);
+  const data = await fetchComciganPayload(request, session);
+  patchComciganRoutesFromPayload(session, data);
   const jsonText = timetableJsonText(data);
   return { jsonText, routes: session.routes };
 }
@@ -125,7 +136,7 @@ export function buildTeacherTimetableGrid(
           const classCode = String((g + 1) * 100 + (c + 1));
           const origSubject = cell.originalSubject?.trim() ?? "";
 
-          if (cell.teacherIndex === teacherIndex) {
+          if (cell.teacherIndex === teacherIndex && !cell.removed) {
             maxPeriod = Math.max(maxPeriod, p + 1);
             const compact = `${classCode}${cell.subject}`.trim();
             let text = compact;
@@ -156,10 +167,13 @@ export function buildTeacherTimetableGrid(
             continue;
           }
 
-          if (!cell.changed) continue;
-
           const origIdx = cell.originalTeacherIndex ?? -1;
-          if (origIdx !== teacherIndex || !origSubject) continue;
+          const isVacatedForTeacher =
+            origIdx === teacherIndex &&
+            origSubject.length > 0 &&
+            (cell.removed ||
+              (cell.changed && cell.teacherIndex !== teacherIndex));
+          if (!isVacatedForTeacher) continue;
 
           maxPeriod = Math.max(maxPeriod, p + 1);
           const vacatedText = `${classCode}${origSubject} (빠짐)`;
@@ -176,6 +190,17 @@ export function buildTeacherTimetableGrid(
               vacated: true,
             });
           }
+          const periodTime = periodStartTimes(Math.max(p + 1, 7))[p] ?? "";
+          changes.push({
+            dayIndex: d,
+            period: p + 1,
+            dateYmd: weekDates[d] ?? "",
+            periodTime,
+            classCode,
+            subject: "빠짐",
+            originalSubject: origSubject,
+            vacated: true,
+          });
         }
       }
     }

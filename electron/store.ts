@@ -95,6 +95,8 @@ export type TimetableSubstituteChange = {
   classCode: string;
   subject: string;
   originalSubject: string;
+  /** true면 해당 교시 수업이 빠짐(교사 관점) */
+  vacated?: boolean;
 };
 
 export type ComciganTimetableView = {

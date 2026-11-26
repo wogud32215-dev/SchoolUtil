@@ -27,6 +27,7 @@ export type TimetableSubstituteEntry = {
   subject: string;
   originalSubject: string;
   text: string;
+  vacated?: boolean;
 };
 
 function legacyParseCell(text: string): Partial<TimetableSubstituteEntry> {
@@ -57,6 +58,7 @@ function changeToEntry(
     gradeClassLabel: classCodeToGradeClass(c.classCode, mode),
     subject: c.subject,
     originalSubject: c.originalSubject,
+    vacated: c.vacated,
     text: c.classCode
       ? `${formatClassCodeDisplay(c.classCode, mode)} ${c.subject}`.trim()
       : c.subject,
@@ -125,7 +127,7 @@ export function timetableSubstituteFingerprint(
     return changes
       .map(
         (c) =>
-          `${c.dateYmd}:${c.period}:${c.classCode}:${c.subject}:${c.originalSubject}`,
+          `${c.dateYmd}:${c.period}:${c.classCode}:${c.subject}:${c.originalSubject}:${c.vacated ? "v" : "s"}`,
       )
       .join("|");
   }
