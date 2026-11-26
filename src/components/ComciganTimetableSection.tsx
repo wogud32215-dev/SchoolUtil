@@ -85,6 +85,11 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
           return;
         }
         setTeachers(res.teachers);
+        if (res.teachers.length === 0) {
+          setStatus(
+            "교사 목록이 비었습니다. «목록 새로고침»을 누르거나 잠시 후 다시 시도해 주세요.",
+          );
+        }
         if (api.listComciganClasses) {
           const classRes = await api.listComciganClasses({
             schoolCode: row.schoolCode,
@@ -154,6 +159,11 @@ export function ComciganTimetableSection({ draft, onPatch }: Props) {
         return;
       }
       setTeachers(res.teachers);
+      if (res.teachers.length === 0) {
+        setStatus(
+          "교사 목록이 비었습니다. «목록 새로고침»을 누르거나 잠시 후 다시 시도해 주세요.",
+        );
+      }
     } finally {
       setLoadingTeachers(false);
     }

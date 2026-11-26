@@ -6,6 +6,13 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.1.3",
+    highlights: [
+      "컴시간: 3901(ILd5) 응답 복호화 — 학교 검색·교사·과목",
+      "컴시간: 교사 이름 깨짐 방지(오복호화 항목 제외)",
+    ],
+  },
+  {
     version: "1.1.2",
     highlights: [
       "컴시간: POST·8253 응답·X73B 복호화로 학교 검색·시간표 갱신 복구",

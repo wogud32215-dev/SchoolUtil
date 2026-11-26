@@ -1,11 +1,11 @@
 # SchoolUtil
 
-Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.1.2**
+Windows용 설치형 바탕화면 종합 유틸 (Electron + React + Vite). **버전 1.1.3**
 
 ## 다운로드 (설치)
 
 최신 설치 파일: **[GitHub Releases — latest](https://github.com/wogud32215-dev/SchoolUtil/releases/latest)**  
-파일 이름 예: `SchoolUtil-Setup-1.1.2.exe`
+파일 이름 예: `SchoolUtil-Setup-1.1.3.exe`
 
 설치 후 **설정**(하단 톱니바퀴)에서 «데이터 백업 · 업데이트»를 볼 수 있습니다. 새 버전은 **설정을 열지 않아도** 상단 배너로 안내되며, 필요할 때 «업데이트 확인»으로 수동 확인도 할 수 있습니다.
 
@@ -252,6 +252,11 @@ npm run dist
    npm run dist
    ```
 3. **받은편지함 정리**: 제목이 `[SchoolUtil]`로 시작하므로 메일 규칙·필터에 활용하세요.
+
+## 변경 (1.1.3)
+
+- **컴시간**: `3901` 응답·ILd5 필드 복호화 (학교 검색·교사·과목 목록)
+- **컴시간**: 교사 이름 XOR 오복호화 시 깨진 항목 제외
 
 ## 변경 (1.1.2)
 

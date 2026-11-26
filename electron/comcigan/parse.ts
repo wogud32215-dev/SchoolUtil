@@ -1,5 +1,10 @@
 import iconv from "iconv-lite";
-import { qnmsbChange, qnmsbChangeNumber } from "./nmsb-change";
+import {
+  isGarbledComciganTeacherName,
+  qnmsbChange,
+  qnmsbChangeNumber,
+  qnmsbChangeTeacherField,
+} from "./nmsb-change";
 import type { ServiceProtocol } from "./service-protocol";
 
 export type ComciganSchoolRow = {
@@ -45,13 +50,14 @@ function resolveSchoolCodeFromRow(
   row: unknown[],
   divisor: number | null | undefined,
   offset: number,
+  comciganVersion?: string | null,
 ): number | null {
   let schoolCode: number | null = null;
   const fallback = row[3];
   if (typeof fallback === "number" && Number.isFinite(fallback)) {
     schoolCode = fallback;
   } else {
-    schoolCode = qnmsbChangeNumber(fallback);
+    schoolCode = qnmsbChangeNumber(fallback, comciganVersion);
   }
 
   if (divisor && divisor > 0 && typeof row[0] === "number") {
@@ -61,7 +67,7 @@ function resolveSchoolCodeFromRow(
       if (typeof cell === "number" && Number.isFinite(cell)) {
         schoolCode = cell;
       } else {
-        const decoded = qnmsbChangeNumber(cell);
+        const decoded = qnmsbChangeNumber(cell, comciganVersion);
         if (decoded != null) schoolCode = decoded;
       }
     }
@@ -71,8 +77,11 @@ function resolveSchoolCodeFromRow(
 }
 
 /** 컴시간 `Q성명` — 복호화 후 마스킹 `*` 처리 */
-export function normalizeComciganTeacherName(encoded: unknown): string {
-  const name = qnmsbChange(encoded);
+export function normalizeComciganTeacherName(
+  encoded: unknown,
+  comciganVersion?: string | null,
+): string {
+  const name = qnmsbChangeTeacherField(encoded, comciganVersion);
   if (
     (name.includes("*") && !name.startsWith("*") && !name.endsWith("*")) ||
     (name.length === 2 && name[1] === "*")
@@ -82,19 +91,28 @@ export function normalizeComciganTeacherName(encoded: unknown): string {
   return name.replace("*", "");
 }
 
-function decodeComciganTeachers(raw: unknown): string[] {
+function decodeComciganTeachers(
+  raw: unknown,
+  comciganVersion?: string | null,
+): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((item) => normalizeComciganTeacherName(item));
+  return raw.map((item) => normalizeComciganTeacherName(item, comciganVersion));
 }
 
-function decodeComciganSubjects(raw: unknown): string[] {
+function decodeComciganSubjects(
+  raw: unknown,
+  comciganVersion?: string | null,
+): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((item) => qnmsbChange(item));
+  return raw.map((item) => qnmsbChange(item, comciganVersion));
 }
 
 export function parseSchoolSearch(
   jsonText: string,
-  protocol?: Pick<ServiceProtocol, "schoolDivisor" | "schoolOffset">,
+  protocol?: Pick<
+    ServiceProtocol,
+    "schoolDivisor" | "schoolOffset" | "version"
+  >,
 ): ComciganSchoolRow[] {
   const data = JSON.parse(jsonText) as {
     학교검색?: unknown[][];
@@ -102,6 +120,7 @@ export function parseSchoolSearch(
   const rows = data.학교검색 ?? [];
   const divisor = protocol?.schoolDivisor;
   const offset = protocol?.schoolOffset ?? 0;
+  const version = protocol?.version ?? null;
   const out: ComciganSchoolRow[] = [];
   for (const row of rows) {
     if (!Array.isArray(row) || row.length < 4) continue;
@@ -109,13 +128,13 @@ export function parseSchoolSearch(
     if (typeof regionCode !== "number") continue;
     if (regionCode === 0) continue;
 
-    const schoolCode = resolveSchoolCodeFromRow(row, divisor, offset);
+    const schoolCode = resolveSchoolCodeFromRow(row, divisor, offset, version);
     if (schoolCode == null || schoolCode <= 0) continue;
 
     out.push({
       regionCode,
-      regionName: qnmsbChange(row[1]),
-      schoolName: qnmsbChange(row[2]),
+      regionName: qnmsbChange(row[1], version),
+      schoolName: qnmsbChange(row[2], version),
       schoolCode,
     });
   }
@@ -306,6 +325,7 @@ export function parseFullTimetable(
     originalCode: string;
     dayCode: string;
   },
+  comciganVersion?: string | null,
 ): ComciganLessonCell[][][][] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
   const resolved =
@@ -314,9 +334,11 @@ export function parseFullTimetable(
       : codes;
   const teachers = decodeComciganTeachers(
     resolveComciganMaterial(data, resolved.teacherCode),
+    comciganVersion,
   );
   const subjects = decodeComciganSubjects(
     resolveComciganMaterial(data, resolved.subjectCode),
+    comciganVersion,
   );
   const original = resolveComciganMaterial(data, resolved.originalCode) as
     | number[][][][]
@@ -395,7 +417,12 @@ export function parseFullTimetable(
 }
 
 function isComciganTeacherName(name: unknown): name is string {
-  return typeof name === "string" && name.length > 1 && name !== "*";
+  return (
+    typeof name === "string" &&
+    name.length > 1 &&
+    name !== "*" &&
+    !isGarbledComciganTeacherName(name)
+  );
 }
 
 export function buildComciganTeacherOptions(
@@ -424,10 +451,12 @@ export function buildComciganTeacherOptions(
 export function listTeachersFromTimetableJson(
   jsonText: string,
   teacherCode: string,
+  comciganVersion?: string | null,
 ): ComciganTeacherOption[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
   const teachers = decodeComciganTeachers(
     resolveComciganMaterial(data, teacherCode),
+    comciganVersion,
   );
   if (!teachers.length) return [];
   return buildComciganTeacherOptions(teachers);
@@ -436,9 +465,13 @@ export function listTeachersFromTimetableJson(
 export function teachersFromTimetableJson(
   jsonText: string,
   teacherCode: string,
+  comciganVersion?: string | null,
 ): string[] {
   const data = JSON.parse(jsonText) as RawTimetableJson;
-  return decodeComciganTeachers(resolveComciganMaterial(data, teacherCode));
+  return decodeComciganTeachers(
+    resolveComciganMaterial(data, teacherCode),
+    comciganVersion,
+  );
 }
 
 export function listClassesFromFull(

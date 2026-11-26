@@ -82,20 +82,28 @@ export async function searchComciganSchools(
 export async function fetchTimetableJson(
   schoolCode: number,
   weekIndex = 1,
-): Promise<{ jsonText: string; routes: ComciganRoutes }> {
+): Promise<{ jsonText: string; routes: ComciganRoutes; comciganVersion: string | null }> {
   const session = await getComciganSession();
   const request = buildTimetableRequest(session, schoolCode, weekIndex);
   const data = await fetchComciganPayload(request, session);
   patchComciganRoutesFromPayload(session, data);
   const jsonText = timetableJsonText(data);
-  return { jsonText, routes: session.routes };
+  return {
+    jsonText,
+    routes: session.routes,
+    comciganVersion: session.protocol.version,
+  };
 }
 
 export async function listComciganTeachers(
   schoolCode: number,
 ): Promise<ComciganTeacherOption[]> {
-  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
-  return listTeachersFromTimetableJson(jsonText, routes.teacherCode);
+  const { jsonText, routes, comciganVersion } = await fetchTimetableJson(schoolCode);
+  return listTeachersFromTimetableJson(
+    jsonText,
+    routes.teacherCode,
+    comciganVersion,
+  );
 }
 
 export function buildTeacherTimetableGrid(
@@ -345,8 +353,8 @@ export async function listComciganClasses(
   schoolCode: number,
   classLabelMode: ComciganClassLabelMode,
 ): Promise<ComciganClassOption[]> {
-  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
-  const full = parseFullTimetable(jsonText, routes);
+  const { jsonText, routes, comciganVersion } = await fetchTimetableJson(schoolCode);
+  const full = parseFullTimetable(jsonText, routes, comciganVersion);
   return listClassesFromFull(full, (code) =>
     classLabelForMode(code, classLabelMode),
   );
@@ -358,8 +366,8 @@ export async function fetchClassTimetableDirect(
   classLabelMode: ComciganClassLabelMode,
   schoolLabel?: string,
 ): Promise<ComciganSyncedTimetable> {
-  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
-  const full = parseFullTimetable(jsonText, routes);
+  const { jsonText, routes, comciganVersion } = await fetchTimetableJson(schoolCode);
+  const full = parseFullTimetable(jsonText, routes, comciganVersion);
   const resolved = resolveComciganClassIndices(full, classCode);
   if ("error" in resolved) {
     throw new Error(resolved.error);
@@ -391,8 +399,12 @@ export async function fetchTeacherTimetableDirect(
   teacherIndex: number,
   schoolLabel?: string,
 ): Promise<TimetableData> {
-  const { jsonText, routes } = await fetchTimetableJson(schoolCode);
-  const teachers = teachersFromTimetableJson(jsonText, routes.teacherCode);
+  const { jsonText, routes, comciganVersion } = await fetchTimetableJson(schoolCode);
+  const teachers = teachersFromTimetableJson(
+    jsonText,
+    routes.teacherCode,
+    comciganVersion,
+  );
   if (!teachers.length) {
     throw new Error("컴시간 시간표 응답을 읽지 못했습니다.");
   }
@@ -404,7 +416,7 @@ export async function fetchTeacherTimetableDirect(
   if (typeof resolved !== "number") {
     throw new Error(resolved.error);
   }
-  const full = parseFullTimetable(jsonText, routes);
+  const full = parseFullTimetable(jsonText, routes, comciganVersion);
   const { periodCount, grid, substituteFlags, comciganView } =
     buildTeacherTimetableGrid(full, resolved);
   const title =
