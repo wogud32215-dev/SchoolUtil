@@ -6,6 +6,13 @@ export type ReleaseNotesEntry = {
 
 export const RELEASE_NOTES_CATALOG: ReleaseNotesEntry[] = [
   {
+    version: "1.1.2",
+    highlights: [
+      "컴시간: POST·8253 응답·X73B 복호화로 학교 검색·시간표 갱신 복구",
+      "컴시간: 평일 수업 시간 30분 자동 갱신, 교체·빠짐(취소) 표시",
+    ],
+  },
+  {
     version: "1.1.1",
     highlights: [
       "내선번호: 엑셀 양식 받기·가져오기로 일괄 추가(추가·전체 교체)",
